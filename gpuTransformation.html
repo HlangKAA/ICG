@@ -90,9 +90,25 @@
             } else if (event.key === 'ArrowDown') {
             direction.y = -1; // เคลื่อนที่ลง
             } else if (event.key === 'a') {
-            scale += 0.5; // เพิ่มขนาด
+            // เพิ่มขนาด
+            if (['4','5','6','7','8','9'].includes(lastScaleKey)) {
+                const val = parseInt(lastScaleKey) - 3;
+                if (lastScaleKey === '4') cube.scale.x += val * 0.1;
+                if (lastScaleKey === '5') cube.scale.y += val * 0.1;
+                if (lastScaleKey === '6') cube.scale.z += val * 0.1;
+            } else {
+                scale += 0.5;
+            }
             } else if (event.key === 'd') {
-            scale = Math.max(0.1, scale - 0.5); // ลดขนาด แต่ไม่ให้ต่ำกว่า 0.1
+            // ลดขนาด แต่ไม่ให้ต่ำกว่า 0.1
+            if (['7','8','9'].includes(lastScaleKey)) {
+                const val = parseInt(lastScaleKey) - 3;
+                if (lastScaleKey === '7') cube.scale.x = Math.max(0.1, cube.scale.x - val * 0.1);
+                if (lastScaleKey === '8') cube.scale.y = Math.max(0.1, cube.scale.y - val * 0.1);
+                if (lastScaleKey === '9') cube.scale.z = Math.max(0.1, cube.scale.z - val * 0.1);
+            } else {
+                scale = Math.max(0.1, scale - 0.5);
+            }
             } else if (event.key === 'w') {
             direction.z = 1; // เคลื่อนที่ไปข้างหน้า
             } else if (event.key === 's') {
@@ -103,21 +119,8 @@
             rotationSpeed += 0.01; // เพิ่มความเร็ว
             } else if (event.key === '3') {
             rotationSpeed = 0.01 + Math.random() * 0.09; // สุ่ม
-            } else if (event.key === '0') {
-            // รีเซ็ตกลับไปเริ่มต้น
-            cube.position.set(0, 0, 0);
-            cube.scale.set(1, 1, 1);
-            scale = 1;
-            rotationSpeed = 0.01;
             } else if (['4','5','6','7','8','9'].includes(event.key)) {
-            // ปรับขนาดแกนตามเลขที่กด
-            const val = parseInt(event.key) - 3; // 4=1, 5=2, ...
-            if (event.key === '4') cube.scale.x += val * 0.1; // เพิ่มขนาดแกน x
-            if (event.key === '5') cube.scale.y += val * 0.1; // เพิ่มขนาดแกน y
-            if (event.key === '6') cube.scale.z += val * 0.1; // เพิ่มขนาดแกน z
-            if (event.key === '7') cube.scale.x = Math.max(0.1, cube.scale.x - val * 0.1); // ลดขนาดแกน x
-            if (event.key === '8') cube.scale.y = Math.max(0.1, cube.scale.y - val * 0.1); // ลดขนาดแกน y
-            if (event.key === '9') cube.scale.z = Math.max(0.1, cube.scale.z - val * 0.1); // ลดขนาดแกน z
+            lastScaleKey = event.key; // จำ key ล่าสุดที่ใช้ปรับขนาดแกน
             }
         });
 
@@ -131,7 +134,12 @@
             if (event.key === 'w' || event.key === 's') {
             direction.z = 0;
             }
+            if (['4','5','6','7','8','9'].includes(event.key)) {
+            lastScaleKey = null;
+            }
         });
+
+        let lastScaleKey = null;
 
         // ✅ render loop
         function animate(t) {
