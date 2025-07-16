@@ -80,6 +80,12 @@
         let scale = 1;
         let rotationSpeed = 0.01;
 
+        let isRotating = false;
+
+        let rotateX = false;
+        let rotateY = false;
+        let rotateZ = false;
+
         window.addEventListener('keydown', (event) => {
             if (event.key === 'ArrowLeft') {
             direction.x = -1;
@@ -101,6 +107,15 @@
             direction.z = 1;
             } else if (event.key === 's') {
             direction.z = -1;
+            } else if (event.key === 'r') {
+            isRotating = true; // กด r เพื่อเริ่มหมุนทุกแกน
+            rotateX = rotateY = rotateZ = true;
+            } else if (event.key === 'x') {
+            rotateX = true;
+            } else if (event.key === 'y') {
+            rotateY = true;
+            } else if (event.key === 'z') {
+            rotateZ = true;
             } else if (event.key === '1') {
             rotationSpeed = 0.01;
             } else if (event.key === '2') {
@@ -128,6 +143,19 @@
             if (event.key === 'w' || event.key === 's') {
             direction.z = 0;
             }
+            if (event.key === 'r') {
+            isRotating = false;
+            rotateX = rotateY = rotateZ = false;
+            }
+            if (event.key === 'x') {
+            rotateX = false;
+            }
+            if (event.key === 'y') {
+            rotateY = false;
+            }
+            if (event.key === 'z') {
+            rotateZ = false;
+            }
         });
 
         // ✅ render loop
@@ -138,10 +166,13 @@
             cube.position.y += direction.z * 0.05;
 
             // Rotation (ใช้ rotationSpeed)
-            cube.rotation.x = t * rotationSpeed;
-            cube.rotation.y = t * (rotationSpeed * 0.1);
-
-            sphere.rotation.y = t * (rotationSpeed * 0.1);
+            if (isRotating || rotateX || rotateY || rotateZ) {
+            if (rotateX) cube.rotation.x = t * rotationSpeed;
+            if (rotateY) cube.rotation.y = t * (rotationSpeed * 0.1);
+            if (rotateZ) cube.rotation.z = t * (rotationSpeed * 0.2);
+            // หมุน sphere ตามแกน Y ถ้า Y ถูกเลือก
+            if (rotateY) sphere.rotation.y = t * (rotationSpeed * 0.1);
+            }
 
             renderer.render(scene, camera);
             requestAnimationFrame(animate);
