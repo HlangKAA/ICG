@@ -86,7 +86,35 @@
         let rotateY = false;
         let rotateZ = false;
 
+        let activeObject = cube; // เริ่มต้นที่กล่อง
+
         window.addEventListener('keydown', (event) => {
+            // เปลี่ยน object ที่จะกระทำ
+            if (event.key === 'c') {
+            activeObject = cube;
+            return;
+            }
+            if (event.key === 'v') {
+            activeObject = sphere;
+            return;
+            }
+
+            if (event.ctrlKey && event.key.toLowerCase() === 'x') {
+            rotateX = !rotateX;
+            isRotating = rotateX || rotateY || rotateZ;
+            return;
+            }
+            if (event.ctrlKey && event.key.toLowerCase() === 'y') {
+            rotateY = !rotateY;
+            isRotating = rotateX || rotateY || rotateZ;
+            return;
+            }
+            if (event.ctrlKey && event.key.toLowerCase() === 'z') {
+            rotateZ = !rotateZ;
+            isRotating = rotateX || rotateY || rotateZ;
+            return;
+            }
+
             if (event.key === 'ArrowLeft') {
             direction.x = -1;
             } else if (event.key === 'ArrowRight') {
@@ -96,13 +124,13 @@
             } else if (event.key === 'ArrowDown') {
             direction.y = -1;
             } else if (event.key === 'a') {
-            cube.scale.x += 0.5;
-            cube.scale.y += 0.5;
-            cube.scale.z += 0.5;
+            activeObject.scale.x += 0.5;
+            activeObject.scale.y += 0.5;
+            activeObject.scale.z += 0.5;
             } else if (event.key === 'd') {
-            cube.scale.x = Math.max(0.1, cube.scale.x - 0.5);
-            cube.scale.y = Math.max(0.1, cube.scale.y - 0.5);
-            cube.scale.z = Math.max(0.1, cube.scale.z - 0.5);
+            activeObject.scale.x = Math.max(0.1, activeObject.scale.x - 0.5);
+            activeObject.scale.y = Math.max(0.1, activeObject.scale.y - 0.5);
+            activeObject.scale.z = Math.max(0.1, activeObject.scale.z - 0.5);
             } else if (event.key === 'w') {
             direction.z = 1;
             } else if (event.key === 's') {
@@ -124,12 +152,12 @@
             rotationSpeed = 0.01 + Math.random() * 0.09;
             } else if (['4','5','6','7','8','9'].includes(event.key)) {
             const val = parseInt(event.key) - 3;
-            if (event.key === '4') cube.scale.x += val * 0.1;
-            if (event.key === '5') cube.scale.y += val * 0.1;
-            if (event.key === '6') cube.scale.z += val * 0.1;
-            if (event.key === '7') cube.scale.x = Math.max(0.1, cube.scale.x - val * 0.1);
-            if (event.key === '8') cube.scale.y = Math.max(0.1, cube.scale.y - val * 0.1);
-            if (event.key === '9') cube.scale.z = Math.max(0.1, cube.scale.z - val * 0.1);
+            if (event.key === '4') activeObject.scale.x += val * 0.1;
+            if (event.key === '5') activeObject.scale.y += val * 0.1;
+            if (event.key === '6') activeObject.scale.z += val * 0.1;
+            if (event.key === '7') activeObject.scale.x = Math.max(0.1, activeObject.scale.x - val * 0.1);
+            if (event.key === '8') activeObject.scale.y = Math.max(0.1, activeObject.scale.y - val * 0.1);
+            if (event.key === '9') activeObject.scale.z = Math.max(0.1, activeObject.scale.z - val * 0.1);
             }
         });
 
@@ -147,31 +175,31 @@
             isRotating = false;
             rotateX = rotateY = rotateZ = false;
             }
-            if (event.key === 'x') {
+            if (event.key === 'x' && !event.ctrlKey) {
             rotateX = false;
             }
-            if (event.key === 'y') {
+            if (event.key === 'y' && !event.ctrlKey) {
             rotateY = false;
             }
-            if (event.key === 'z') {
+            if (event.key === 'z' && !event.ctrlKey) {
             rotateZ = false;
             }
         });
 
         // ✅ render loop
         function animate(t) {
-            // Move cube
-            cube.position.x += direction.x * 0.05;
-            cube.position.z -= direction.y * 0.05;
-            cube.position.y += direction.z * 0.05;
+            // Move active object
+            activeObject.position.x += direction.x * 0.05;
+            activeObject.position.z -= direction.y * 0.05;
+            activeObject.position.y += direction.z * 0.05;
 
             // Rotation (ใช้ rotationSpeed)
             if (isRotating || rotateX || rotateY || rotateZ) {
-            if (rotateX) cube.rotation.x = t * rotationSpeed;
-            if (rotateY) cube.rotation.y = t * (rotationSpeed * 0.1);
-            if (rotateZ) cube.rotation.z = t * (rotationSpeed * 0.2);
+            if (rotateX) activeObject.rotation.x = t * rotationSpeed;
+            if (rotateY) activeObject.rotation.y = t * (rotationSpeed * 0.1);
+            if (rotateZ) activeObject.rotation.z = t * (rotationSpeed * 0.2);
             // หมุน sphere ตามแกน Y ถ้า Y ถูกเลือก
-            if (rotateY) sphere.rotation.y = t * (rotationSpeed * 0.1);
+            if (activeObject === sphere && rotateY) sphere.rotation.y = t * (rotationSpeed * 0.1);
             }
 
             renderer.render(scene, camera);
