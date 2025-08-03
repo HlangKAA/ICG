@@ -14,7 +14,7 @@
 
 - **ชื่อ (ภาษาไทย):** โฆษิต นาวิกานนท์  
 - **Name (English):** Kosit Nawikanon  
-- **Email:** kosit.n@ku.th / poonnavikanon.2547@gmail.com
+- **Email:** kosit.n@ku.th or poonnavikanon.2547@gmail.com
 
 ---
 
