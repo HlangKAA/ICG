@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="utf-8" />
-    <title>PBR Material Editor with Blender Models - Assignment #3</title>
+    <title>Character Lighting Demo - 3 Light Types with HDRI</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
         html, body {
@@ -115,14 +116,7 @@
             font-family: monospace;
         }
         
-        .preset-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        
-        .preset-btn, .action-btn {
+        .action-btn {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: #fff;
@@ -131,27 +125,13 @@
             cursor: pointer;
             font-size: 11px;
             transition: all 0.2s;
-        }
-        
-        .preset-btn:hover, .action-btn:hover {
-            background: rgba(255, 107, 107, 0.3);
-            border-color: #ff6b6b;
-        }
-        
-        .texture-preview {
-            width: 60px;
-            height: 60px;
-            border-radius: 5px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            object-fit: cover;
+            width: 100%;
             margin-top: 5px;
         }
         
-        .texture-grid {
-            display: grid;
-            grid-template-columns: 1fr 70px;
-            gap: 10px;
-            align-items: center;
+        .action-btn:hover {
+            background: rgba(255, 107, 107, 0.3);
+            border-color: #ff6b6b;
         }
         
         .model-info {
@@ -230,118 +210,229 @@
         input:checked + .toggle-slider:before {
             transform: translateX(26px);
         }
+
+        .light-group {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .light-title {
+            font-weight: bold;
+            color: #4ecdc4;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .hdri-preview {
+            width: 100%;
+            height: 60px;
+            border-radius: 5px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            object-fit: cover;
+            margin-top: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .controls-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .controls-panel h4 {
+            margin: 0 0 10px 0;
+            color: #4ecdc4;
+            font-size: 14px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            gap: 5px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .key-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: #fff;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .key-btn:hover, .key-btn.active {
+            background: rgba(255, 107, 107, 0.3);
+            border-color: #ff6b6b;
+        }
+
+        .scale-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .scale-btn {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+
+        .scale-btn:hover {
+            background: rgba(255, 107, 107, 0.3);
+            border-color: #ff6b6b;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
 </head>
 <body>
     <!-- UI Panel -->
     <div class="ui-panel">
         <div class="ui-section">
-            <h3>📁 Model Loading</h3>
-            <input type="file" class="file-input" id="modelInput" accept=".gltf,.glb" placeholder="Load GLTF/GLB Model">
-            <button class="action-btn" onclick="loadDefaultModel()" style="width: 100%; margin-top: 10px;">Load Default Model</button>
+            <h3>🎭 Character Model</h3>
+            <input type="file" class="file-input" id="modelInput" accept=".gltf,.glb" placeholder="Load Character GLB/GLTF">
+            <button class="action-btn" onclick="loadDefaultCharacter()">Load Default Character</button>
             <div id="modelInfo" class="model-info" style="display: none;">
-                <strong>Model Loaded:</strong> <span id="modelName">-</span><br>
-                <strong>Materials:</strong> <span id="materialCount">0</span>
+                <strong>Model:</strong> <span id="modelName">-</span><br>
+                <strong>Materials:</strong> <span id="materialCount">0</span><br>
+                <strong>Meshes:</strong> <span id="meshCount">0</span>
             </div>
         </div>
 
         <div class="ui-section">
-            <h3>🎨 PBR Properties</h3>
-            
-            <div class="control-group">
-                <label class="control-label">
-                    Base Color
-                    <span class="value-display" id="colorValue">#aaffaa</span>
-                </label>
-                <input type="color" class="color-picker" id="baseColor" value="#aaffaa">
-            </div>
-            
-            <div class="control-group">
-                <label class="control-label">
-                    Metallic
-                    <span class="value-display" id="metallicValue">0.50</span>
-                </label>
-                <input type="range" class="slider" id="metallic" min="0" max="1" step="0.01" value="0.5">
-            </div>
-            
-            <div class="control-group">
-                <label class="control-label">
-                    Roughness
-                    <span class="value-display" id="roughnessValue">0.30</span>
-                </label>
-                <input type="range" class="slider" id="roughness" min="0" max="1" step="0.01" value="0.3">
-            </div>
-
-            <div class="control-group">
-                <label class="control-label">
-                    Normal Strength
-                    <span class="value-display" id="normalValue">1.00</span>
-                </label>
-                <input type="range" class="slider" id="normalScale" min="0" max="2" step="0.05" value="1.0">
-            </div>
-
+            <h3>🌍 HDRI Environment</h3>
+            <input type="file" class="file-input" id="hdriInput" accept=".hdr,.exr" placeholder="Load HDRI Environment">
+            <button class="action-btn" onclick="loadDefaultHDRI()">Load Default HDRI</button>
             <div class="control-group">
                 <label class="control-label">
                     Environment Intensity
-                    <span class="value-display" id="envValue">1.00</span>
+                    <span class="value-display" id="envIntensityValue">1.00</span>
                 </label>
                 <input type="range" class="slider" id="envIntensity" min="0" max="3" step="0.1" value="1.0">
             </div>
+            <canvas class="hdri-preview" id="hdriPreview"></canvas>
         </div>
 
         <div class="ui-section">
-            <h3>🖼️ Texture Maps</h3>
+            <h3>💡 Lighting Setup</h3>
             
-            <div class="control-group">
-                <div class="texture-grid">
-                    <div>
-                        <label class="control-label">Albedo/Diffuse Map</label>
-                        <input type="file" class="file-input" id="albedoMap" accept="image/*" style="font-size: 10px; height: 32px;">
-                    </div>
-                    <canvas class="texture-preview" id="albedoPreview"></canvas>
+            <!-- Directional Light -->
+            <div class="light-group">
+                <div class="light-title">☀️ Directional Light (Sun)</div>
+                <div class="control-group">
+                    <label class="control-label">
+                        Intensity
+                        <span class="value-display" id="dirIntensityValue">1.00</span>
+                    </label>
+                    <input type="range" class="slider" id="dirIntensity" min="0" max="3" step="0.1" value="1.0">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Color</label>
+                    <input type="color" class="color-picker" id="dirColor" value="#ffffff">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">
+                        Enable
+                        <label class="toggle-switch" style="float: right;">
+                            <input type="checkbox" id="dirEnabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </label>
                 </div>
             </div>
 
-            <div class="control-group">
-                <div class="texture-grid">
-                    <div>
-                        <label class="control-label">Normal Map</label>
-                        <input type="file" class="file-input" id="normalMap" accept="image/*" style="font-size: 10px; height: 32px;">
-                    </div>
-                    <canvas class="texture-preview" id="normalPreview"></canvas>
+            <!-- Point Light -->
+            <div class="light-group">
+                <div class="light-title">💡 Point Light</div>
+                <div class="control-group">
+                    <label class="control-label">
+                        Intensity
+                        <span class="value-display" id="pointIntensityValue">0.50</span>
+                    </label>
+                    <input type="range" class="slider" id="pointIntensity" min="0" max="5" step="0.1" value="0.5">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Color</label>
+                    <input type="color" class="color-picker" id="pointColor" value="#ffaa00">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">
+                        Distance
+                        <span class="value-display" id="pointDistanceValue">10.0</span>
+                    </label>
+                    <input type="range" class="slider" id="pointDistance" min="1" max="20" step="0.5" value="10">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">
+                        Enable
+                        <label class="toggle-switch" style="float: right;">
+                            <input type="checkbox" id="pointEnabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </label>
                 </div>
             </div>
 
-            <div class="control-group">
-                <div class="texture-grid">
-                    <div>
-                        <label class="control-label">Metallic Map</label>
-                        <input type="file" class="file-input" id="metallicMap" accept="image/*" style="font-size: 10px; height: 32px;">
-                    </div>
-                    <canvas class="texture-preview" id="metallicPreview"></canvas>
+            <!-- Spot Light -->
+            <div class="light-group">
+                <div class="light-title">🔦 Spot Light</div>
+                <div class="control-group">
+                    <label class="control-label">
+                        Intensity
+                        <span class="value-display" id="spotIntensityValue">0.30</span>
+                    </label>
+                    <input type="range" class="slider" id="spotIntensity" min="0" max="3" step="0.1" value="0.3">
                 </div>
-            </div>
-
-            <div class="control-group">
-                <div class="texture-grid">
-                    <div>
-                        <label class="control-label">Roughness Map</label>
-                        <input type="file" class="file-input" id="roughnessMap" accept="image/*" style="font-size: 10px; height: 32px;">
-                    </div>
-                    <canvas class="texture-preview" id="roughnessPreview"></canvas>
+                <div class="control-group">
+                    <label class="control-label">Color</label>
+                    <input type="color" class="color-picker" id="spotColor" value="#00aaff">
                 </div>
-            </div>
-
-            <div class="control-group">
-                <div class="texture-grid">
-                    <div>
-                        <label class="control-label">Ambient Occlusion</label>
-                        <input type="file" class="file-input" id="aoMap" accept="image/*" style="font-size: 10px; height: 32px;">
-                    </div>
-                    <canvas class="texture-preview" id="aoPreview"></canvas>
+                <div class="control-group">
+                    <label class="control-label">
+                        Angle
+                        <span class="value-display" id="spotAngleValue">0.30</span>
+                    </label>
+                    <input type="range" class="slider" id="spotAngle" min="0.1" max="1.5" step="0.05" value="0.3">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">
+                        Penumbra
+                        <span class="value-display" id="spotPenumbraValue">0.20</span>
+                    </label>
+                    <input type="range" class="slider" id="spotPenumbra" min="0" max="1" step="0.05" value="0.2">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">
+                        Enable
+                        <label class="toggle-switch" style="float: right;">
+                            <input type="checkbox" id="spotEnabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </label>
                 </div>
             </div>
         </div>
@@ -350,35 +441,52 @@
             <h3>🔧 Options</h3>
             <div class="control-group">
                 <label class="control-label">
-                    Auto Rotate Model
+                    Auto Rotate Character
                     <label class="toggle-switch" style="float: right;">
-                        <input type="checkbox" id="autoRotate" checked>
+                        <input type="checkbox" id="autoRotate">
                         <span class="toggle-slider"></span>
                     </label>
                 </label>
             </div>
-        </div>
-        
-        <div class="ui-section">
-            <h3>⚡ Presets</h3>
-            <div class="preset-buttons">
-                <button class="preset-btn" onclick="applyPreset('chrome')">Chrome</button>
-                <button class="preset-btn" onclick="applyPreset('gold')">Gold</button>
-                <button class="preset-btn" onclick="applyPreset('plastic')">Plastic</button>
-                <button class="preset-btn" onclick="applyPreset('rubber')">Rubber</button>
-                <button class="preset-btn" onclick="applyPreset('ceramic')">Ceramic</button>
-                <button class="preset-btn" onclick="applyPreset('wood')">Wood</button>
+            <div class="control-group">
+                <label class="control-label">
+                    Show Light Helpers
+                    <label class="toggle-switch" style="float: right;">
+                        <input type="checkbox" id="showHelpers">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </label>
             </div>
         </div>
     </div>
     
     <!-- Info Panel -->
     <div class="info-panel">
-        <h4>🔧 Controls</h4>
+        <h4>🎮 Camera Controls</h4>
         <p><strong>Mouse:</strong> Orbit camera</p>
         <p><strong>Wheel:</strong> Zoom in/out</p>
-        <p><strong>Models:</strong> GLTF/GLB from Blender</p>
-        <p><strong>Textures:</strong> PNG/JPG supported</p>
+        <p><strong>Character:</strong> GLB/GLTF models</p>
+        <p><strong>Environment:</strong> HDR/EXR images</p>
+        <p><strong>Lighting:</strong> 3 light types comparison</p>
+    </div>
+
+    <!-- Character Controls Panel -->
+    <div class="controls-panel">
+        <h4>🚶 Character Movement</h4>
+        <div class="controls-grid">
+            <div></div>
+            <div class="key-btn" data-key="ArrowUp">↑</div>
+            <div></div>
+            <div class="key-btn" data-key="ArrowLeft">←</div>
+            <div class="key-btn" data-key="ArrowDown">↓</div>
+            <div class="key-btn" data-key="ArrowRight">→</div>
+        </div>
+        <div class="scale-controls">
+            <button class="scale-btn" onclick="scaleCharacter(0.8)">Scale -</button>
+            <button class="scale-btn" onclick="resetCharacterScale()">Reset</button>
+            <button class="scale-btn" onclick="scaleCharacter(1.2)">Scale +</button>
+        </div>
+        <p style="font-size: 11px; margin: 5px 0 0 0; color: #aaa;">Use Arrow Keys to move</p>
     </div>
 
     <script>
@@ -387,184 +495,473 @@
         scene.background = new THREE.Color(0x1a1a1a);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
-        camera.position.set(0, 1, 3);
+        camera.position.set(0, 1.6, 4);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.0;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
 
         // Orbit controls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
+        controls.target.set(0, 1, 0);
 
-        // Environment map
-        const envMapUrls = [
-            'https://threejs.org/examples/textures/cube/Bridge2/posx.jpg',
-            'https://threejs.org/examples/textures/cube/Bridge2/negx.jpg',
-            'https://threejs.org/examples/textures/cube/Bridge2/posy.jpg',
-            'https://threejs.org/examples/textures/cube/Bridge2/negy.jpg',
-            'https://threejs.org/examples/textures/cube/Bridge2/posz.jpg',
-            'https://threejs.org/examples/textures/cube/Bridge2/negz.jpg'
-        ];
-        
-        const envMap = new THREE.CubeTextureLoader().load(envMapUrls);
-        envMap.encoding = THREE.sRGBEncoding;
-        scene.environment = envMap;
+        // Character movement variables
+        let currentModel = null;
+        let currentMaterials = [];
+        let characterPosition = new THREE.Vector3(0, 0, 0);
+        let characterScale = 1;
+        const moveSpeed = 0.05;
+        const keys = {};
+
+        // Keyboard controls
+        document.addEventListener('keydown', (event) => {
+            keys[event.code] = true;
+            updateKeyVisuals(event.code, true);
+        });
+
+        document.addEventListener('keyup', (event) => {
+            keys[event.code] = false;
+            updateKeyVisuals(event.code, false);
+        });
+
+        function updateKeyVisuals(keyCode, pressed) {
+            const keyBtns = document.querySelectorAll('.key-btn');
+            keyBtns.forEach(btn => {
+                if (btn.dataset.key === keyCode.replace('Key', '').replace('Arrow', 'Arrow')) {
+                    if (pressed) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
+        }
+
+        function moveCharacter() {
+            if (!currentModel) return;
+
+            const prevPosition = characterPosition.clone();
+            
+            if (keys['ArrowUp']) {
+                characterPosition.z -= moveSpeed;
+            }
+            if (keys['ArrowDown']) {
+                characterPosition.z += moveSpeed;
+            }
+            if (keys['ArrowLeft']) {
+                characterPosition.x -= moveSpeed;
+            }
+            if (keys['ArrowRight']) {
+                characterPosition.x += moveSpeed;
+            }
+
+            // Apply movement to model
+            currentModel.position.x = characterPosition.x;
+            currentModel.position.z = characterPosition.z;
+
+            // Face movement direction
+            if (!characterPosition.equals(prevPosition)) {
+                const direction = new THREE.Vector3().subVectors(characterPosition, prevPosition);
+                if (direction.length() > 0) {
+                    const angle = Math.atan2(direction.x, direction.z);
+                    currentModel.rotation.y = angle;
+                }
+            }
+        }
+
+        function scaleCharacter(scaleFactor) {
+            if (!currentModel) return;
+            
+            characterScale *= scaleFactor;
+            characterScale = Math.max(0.1, Math.min(3.0, characterScale)); // Limit scale between 0.1 and 3.0
+            currentModel.scale.setScalar(characterScale);
+        }
+
+        function resetCharacterScale() {
+            if (!currentModel) return;
+            
+            characterScale = 1;
+            currentModel.scale.setScalar(characterScale);
+        }
+
+        // Default HDRI and Model URLs
+        const DEFAULT_MODEL_URL = 'https://hlangkaa.github.io/ICG/PBR_asset/Samael.glb';
+        const DEFAULT_HDRI_URL = 'https://hlangkaa.github.io/ICG/PBR_asset/citrus_orchard_puresky_1k.hdr';
+
+        // HDRI environment
+        let currentEnvMap = null;
+        const rgbeLoader = new THREE.RGBELoader();
+
+        function loadDefaultHDRI() {
+            rgbeLoader.load(DEFAULT_HDRI_URL, function(texture) {
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                
+                scene.background = texture;
+                scene.environment = texture;
+                currentEnvMap = texture;
+                
+                // Update all materials with new environment
+                currentMaterials.forEach(material => {
+                    if (material.isMeshStandardMaterial) {
+                        material.envMap = texture;
+                        material.needsUpdate = true;
+                    }
+                });
+                
+                // Create HDRI preview
+                createHDRIPreview(texture);
+                
+            }, undefined, function(error) {
+                console.error('Error loading default HDRI:', error);
+                createFallbackEnvironment();
+            });
+        }
+
+        function createFallbackEnvironment() {
+            // Create a simple gradient environment as fallback
+            const envMapUrls = [
+                'https://threejs.org/examples/textures/cube/Bridge2/posx.jpg',
+                'https://threejs.org/examples/textures/cube/Bridge2/negx.jpg',
+                'https://threejs.org/examples/textures/cube/Bridge2/posy.jpg',
+                'https://threejs.org/examples/textures/cube/Bridge2/negy.jpg',
+                'https://threejs.org/examples/textures/cube/Bridge2/posz.jpg',
+                'https://threejs.org/examples/textures/cube/Bridge2/negz.jpg'
+            ];
+            
+            const envMap = new THREE.CubeTextureLoader().load(envMapUrls);
+            envMap.encoding = THREE.sRGBEncoding;
+            scene.environment = envMap;
+            scene.background = envMap;
+            currentEnvMap = envMap;
+        }
 
         // Lighting setup
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.2);
         scene.add(ambientLight);
 
+        // Directional Light (Sun)
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        directionalLight.position.set(5, 5, 5);
+        directionalLight.position.set(5, 8, 5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 50;
+        directionalLight.shadow.camera.left = -10;
+        directionalLight.shadow.camera.right = 10;
+        directionalLight.shadow.camera.top = 10;
+        directionalLight.shadow.camera.bottom = -10;
         scene.add(directionalLight);
 
-        const rimLight = new THREE.DirectionalLight(0x4ecdc4, 0.5);
-        rimLight.position.set(-3, 2, -2);
-        scene.add(rimLight);
+        // Point Light
+        const pointLight = new THREE.PointLight(0xffaa00, 0.5, 10);
+        pointLight.position.set(2, 3, 2);
+        pointLight.castShadow = true;
+        pointLight.shadow.mapSize.width = 1024;
+        pointLight.shadow.mapSize.height = 1024;
+        scene.add(pointLight);
+
+        // Spot Light
+        const spotLight = new THREE.SpotLight(0x00aaff, 0.3, 10, 0.3, 0.2);
+        spotLight.position.set(-3, 4, 3);
+        spotLight.target.position.set(0, 1, 0);
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+        scene.add(spotLight);
+        scene.add(spotLight.target);
+
+        // Light helpers
+        const dirLightHelper = new THREE.DirectionalLightHelper(directionalLight, 1);
+        const pointLightHelper = new THREE.PointLightHelper(pointLight, 0.2);
+        const spotLightHelper = new THREE.SpotLightHelper(spotLight);
+        
+        let helpersVisible = false;
 
         // Ground plane
         const groundGeometry = new THREE.PlaneGeometry(20, 20);
         const groundMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x333333, 
+            color: 0x444444, 
             roughness: 0.8,
             metalness: 0.0
         });
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
         ground.rotation.x = -Math.PI / 2;
-        ground.position.y = -1;
+        ground.position.y = 0;
+        ground.receiveShadow = true;
         scene.add(ground);
-
-        // Default sphere object
-        let currentModel = null;
-        let currentMaterials = [];
-
-        function createDefaultSphere() {
-            const sphereGeometry = new THREE.SphereGeometry(0.8, 64, 64);
-            const pbrMaterial = new THREE.MeshStandardMaterial({
-                color: 0xaaffaa,
-                metalness: 0.5,
-                roughness: 0.3,
-                envMap: envMap,
-                envMapIntensity: 1.0
-            });
-            
-            const sphere = new THREE.Mesh(sphereGeometry, pbrMaterial);
-            currentMaterials = [pbrMaterial];
-            return sphere;
-        }
-
-        currentModel = createDefaultSphere();
-        scene.add(currentModel);
 
         // GLTF Loader
         const gltfLoader = new THREE.GLTFLoader();
 
+        function loadDefaultCharacter() {
+            gltfLoader.load(DEFAULT_MODEL_URL, function(gltf) {
+                // Remove current model
+                if (currentModel) {
+                    scene.remove(currentModel);
+                }
+                
+                currentModel = gltf.scene;
+                currentMaterials = [];
+                let meshCount = 0;
+                
+                // Collect all materials and enable shadows
+                currentModel.traverse(function(child) {
+                    if (child.isMesh) {
+                        meshCount++;
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        
+                        if (child.material) {
+                            if (Array.isArray(child.material)) {
+                                currentMaterials.push(...child.material);
+                            } else {
+                                currentMaterials.push(child.material);
+                            }
+                        }
+                    }
+                });
+                
+                // Set up materials for PBR with environment
+                currentMaterials.forEach(material => {
+                    if (material.isMeshStandardMaterial) {
+                        material.envMap = currentEnvMap;
+                        material.needsUpdate = true;
+                    }
+                });
+                
+                // Scale and position model
+                const box = new THREE.Box3().setFromObject(currentModel);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                characterScale = 1.5 / maxDim; // Smaller scale for better proportions
+                currentModel.scale.setScalar(characterScale);
+                
+                // Center model on ground
+                const center = box.getCenter(new THREE.Vector3());
+                center.multiplyScalar(characterScale);
+                currentModel.position.x = characterPosition.x - center.x;
+                currentModel.position.z = characterPosition.z - center.z;
+                currentModel.position.y = -box.min.y * characterScale;
+                
+                scene.add(currentModel);
+                
+                // Update UI
+                modelInfo.style.display = 'block';
+                modelNameSpan.textContent = 'Samael (Default)';
+                materialCountSpan.textContent = currentMaterials.length;
+                meshCountSpan.textContent = meshCount;
+                
+                // Apply current lighting settings
+                updateLighting();
+                
+            }, undefined, function(error) {
+                console.error('Error loading default character:', error);
+                // Create fallback character
+                createFallbackCharacter();
+            });
+        }
+
+        function createFallbackCharacter() {
+            // Create a simple humanoid character using basic geometries
+            const group = new THREE.Group();
+            
+            // Body materials with PBR properties
+            const bodyMaterial = new THREE.MeshStandardMaterial({
+                color: 0xfdbcb4,
+                metalness: 0.0,
+                roughness: 0.6,
+                envMap: currentEnvMap,
+                envMapIntensity: 1.0
+            });
+            
+            const clothMaterial = new THREE.MeshStandardMaterial({
+                color: 0x4a90e2,
+                metalness: 0.0,
+                roughness: 0.8,
+                envMap: currentEnvMap,
+                envMapIntensity: 0.5
+            });
+            
+            const hairMaterial = new THREE.MeshStandardMaterial({
+                color: 0x2d1b14,
+                metalness: 0.1,
+                roughness: 0.9,
+                envMap: currentEnvMap,
+                envMapIntensity: 0.3
+            });
+
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.y = 1.75;
+            head.castShadow = true;
+            group.add(head);
+
+            // Hair
+            const hairGeometry = new THREE.SphereGeometry(0.27, 16, 16);
+            hairGeometry.scale(1, 0.8, 1);
+            const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+            hair.position.y = 1.85;
+            hair.castShadow = true;
+            group.add(hair);
+
+            // Body
+            const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.2, 0.8, 12);
+            const body = new THREE.Mesh(bodyGeometry, clothMaterial);
+            body.position.y = 1.1;
+            body.castShadow = true;
+            group.add(body);
+
+            // Arms
+            const armGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.6, 8);
+            const leftArm = new THREE.Mesh(armGeometry, bodyMaterial);
+            leftArm.position.set(-0.3, 1.2, 0);
+            leftArm.rotation.z = 0.3;
+            leftArm.castShadow = true;
+            group.add(leftArm);
+
+            const rightArm = new THREE.Mesh(armGeometry, bodyMaterial);
+            rightArm.position.set(0.3, 1.2, 0);
+            rightArm.rotation.z = -0.3;
+            rightArm.castShadow = true;
+            group.add(rightArm);
+
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.08, 0.1, 0.8, 8);
+            const leftLeg = new THREE.Mesh(legGeometry, clothMaterial);
+            leftLeg.position.set(-0.1, 0.4, 0);
+            leftLeg.castShadow = true;
+            group.add(leftLeg);
+
+            const rightLeg = new THREE.Mesh(legGeometry, clothMaterial);
+            rightLeg.position.set(0.1, 0.4, 0);
+            rightLeg.castShadow = true;
+            group.add(rightLeg);
+
+            // Feet
+            const footGeometry = new THREE.BoxGeometry(0.15, 0.1, 0.25);
+            const footMaterial = new THREE.MeshStandardMaterial({
+                color: 0x654321,
+                metalness: 0.0,
+                roughness: 0.9,
+                envMap: currentEnvMap,
+                envMapIntensity: 0.2
+            });
+
+            const leftFoot = new THREE.Mesh(footGeometry, footMaterial);
+            leftFoot.position.set(-0.1, 0.05, 0.05);
+            leftFoot.castShadow = true;
+            group.add(leftFoot);
+
+            const rightFoot = new THREE.Mesh(footGeometry, footMaterial);
+            rightFoot.position.set(0.1, 0.05, 0.05);
+            rightFoot.castShadow = true;
+            group.add(rightFoot);
+
+            currentMaterials = [bodyMaterial, clothMaterial, hairMaterial, footMaterial];
+            currentModel = group;
+            characterScale = 1;
+            
+            // Position at character position
+            currentModel.position.copy(characterPosition);
+            currentModel.position.y = 0;
+            
+            scene.add(currentModel);
+            
+            // Update UI
+            modelInfo.style.display = 'block';
+            modelNameSpan.textContent = 'Fallback Character';
+            materialCountSpan.textContent = currentMaterials.length;
+            meshCountSpan.textContent = '8';
+        }
+
         // UI Elements
-        const baseColorPicker = document.getElementById('baseColor');
-        const metallicSlider = document.getElementById('metallic');
-        const roughnessSlider = document.getElementById('roughness');
-        const normalScaleSlider = document.getElementById('normalScale');
         const envIntensitySlider = document.getElementById('envIntensity');
         const autoRotateCheckbox = document.getElementById('autoRotate');
+        const showHelpersCheckbox = document.getElementById('showHelpers');
         
-        const colorValue = document.getElementById('colorValue');
-        const metallicValue = document.getElementById('metallicValue');
-        const roughnessValue = document.getElementById('roughnessValue');
-        const normalValue = document.getElementById('normalValue');
-        const envValue = document.getElementById('envValue');
+        // Light controls
+        const dirIntensitySlider = document.getElementById('dirIntensity');
+        const dirColorPicker = document.getElementById('dirColor');
+        const dirEnabledCheckbox = document.getElementById('dirEnabled');
+        
+        const pointIntensitySlider = document.getElementById('pointIntensity');
+        const pointColorPicker = document.getElementById('pointColor');
+        const pointDistanceSlider = document.getElementById('pointDistance');
+        const pointEnabledCheckbox = document.getElementById('pointEnabled');
+        
+        const spotIntensitySlider = document.getElementById('spotIntensity');
+        const spotColorPicker = document.getElementById('spotColor');
+        const spotAngleSlider = document.getElementById('spotAngle');
+        const spotPenumbraSlider = document.getElementById('spotPenumbra');
+        const spotEnabledCheckbox = document.getElementById('spotEnabled');
 
-        // Texture inputs
-        const albedoMapInput = document.getElementById('albedoMap');
-        const normalMapInput = document.getElementById('normalMap');
-        const metallicMapInput = document.getElementById('metallicMap');
-        const roughnessMapInput = document.getElementById('roughnessMap');
-        const aoMapInput = document.getElementById('aoMap');
+        // Value displays
+        const envIntensityValue = document.getElementById('envIntensityValue');
+        const dirIntensityValue = document.getElementById('dirIntensityValue');
+        const pointIntensityValue = document.getElementById('pointIntensityValue');
+        const pointDistanceValue = document.getElementById('pointDistanceValue');
+        const spotIntensityValue = document.getElementById('spotIntensityValue');
+        const spotAngleValue = document.getElementById('spotAngleValue');
+        const spotPenumbraValue = document.getElementById('spotPenumbraValue');
 
-        // Model loading
+        // Model/HDRI inputs
         const modelInput = document.getElementById('modelInput');
+        const hdriInput = document.getElementById('hdriInput');
         const modelInfo = document.getElementById('modelInfo');
         const modelNameSpan = document.getElementById('modelName');
         const materialCountSpan = document.getElementById('materialCount');
+        const meshCountSpan = document.getElementById('meshCount');
 
-        // Update material function
-        function updateMaterial() {
-            const color = new THREE.Color(baseColorPicker.value);
-            const metallic = parseFloat(metallicSlider.value);
-            const roughness = parseFloat(roughnessSlider.value);
-            const normalScale = parseFloat(normalScaleSlider.value);
+        // Update lighting function
+        function updateLighting() {
+            // Environment
             const envIntensity = parseFloat(envIntensitySlider.value);
+            scene.environmentIntensity = envIntensity;
+            envIntensityValue.textContent = envIntensity.toFixed(2);
             
+            // Update all materials environment intensity
             currentMaterials.forEach(material => {
                 if (material.isMeshStandardMaterial) {
-                    material.color = color.clone();
-                    material.metalness = metallic;
-                    material.roughness = roughness;
                     material.envMapIntensity = envIntensity;
-                    
-                    if (material.normalMap && material.normalScale) {
-                        material.normalScale.set(normalScale, normalScale);
-                    }
                 }
             });
             
-            // Update display values
-            colorValue.textContent = baseColorPicker.value;
-            metallicValue.textContent = metallic.toFixed(2);
-            roughnessValue.textContent = roughness.toFixed(2);
-            normalValue.textContent = normalScale.toFixed(2);
-            envValue.textContent = envIntensity.toFixed(2);
-        }
-
-        // Load texture and create preview
-        function loadTexture(file, material, property, previewCanvasId) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const textureLoader = new THREE.TextureLoader();
-                textureLoader.load(event.target.result, function(texture) {
-                    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-                    texture.encoding = (property === 'map') ? THREE.sRGBEncoding : THREE.LinearEncoding;
-                    
-                    currentMaterials.forEach(mat => {
-                        if (mat.isMeshStandardMaterial) {
-                            mat[property] = texture;
-                            
-                            // Special handling for normal maps
-                            if (property === 'normalMap') {
-                                mat.normalScale = new THREE.Vector2(parseFloat(normalScaleSlider.value), parseFloat(normalScaleSlider.value));
-                            }
-                            
-                            mat.needsUpdate = true;
-                        }
-                    });
-                    
-                    // Create preview
-                    createTexturePreview(event.target.result, previewCanvasId);
-                });
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // Create texture preview
-        function createTexturePreview(imageSrc, canvasId) {
-            const canvas = document.getElementById(canvasId);
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
+            // Directional Light
+            const dirIntensity = dirEnabledCheckbox.checked ? parseFloat(dirIntensitySlider.value) : 0;
+            directionalLight.intensity = dirIntensity;
+            directionalLight.color.setHex(dirColorPicker.value.replace('#', '0x'));
+            dirIntensityValue.textContent = parseFloat(dirIntensitySlider.value).toFixed(2);
             
-            img.onload = function() {
-                canvas.width = 60;
-                canvas.height = 60;
-                ctx.drawImage(img, 0, 0, 60, 60);
-            };
-            img.src = imageSrc;
+            // Point Light
+            const pointIntensity = pointEnabledCheckbox.checked ? parseFloat(pointIntensitySlider.value) : 0;
+            pointLight.intensity = pointIntensity;
+            pointLight.color.setHex(pointColorPicker.value.replace('#', '0x'));
+            pointLight.distance = parseFloat(pointDistanceSlider.value);
+            pointIntensityValue.textContent = parseFloat(pointIntensitySlider.value).toFixed(2);
+            pointDistanceValue.textContent = parseFloat(pointDistanceSlider.value).toFixed(1);
+            
+            // Spot Light
+            const spotIntensity = spotEnabledCheckbox.checked ? parseFloat(spotIntensitySlider.value) : 0;
+            spotLight.intensity = spotIntensity;
+            spotLight.color.setHex(spotColorPicker.value.replace('#', '0x'));
+            spotLight.angle = parseFloat(spotAngleSlider.value);
+            spotLight.penumbra = parseFloat(spotPenumbraSlider.value);
+            spotIntensityValue.textContent = parseFloat(spotIntensitySlider.value).toFixed(2);
+            spotAngleValue.textContent = parseFloat(spotAngleSlider.value).toFixed(2);
+            spotPenumbraValue.textContent = parseFloat(spotPenumbraSlider.value).toFixed(2);
         }
 
-        // Load model function
-        function loadModel(file) {
+        // Load character model from file
+        function loadCharacterModel(file) {
             const reader = new FileReader();
             reader.onload = function(event) {
                 const arrayBuffer = event.target.result;
@@ -577,22 +974,30 @@
                     
                     currentModel = gltf.scene;
                     currentMaterials = [];
+                    let meshCount = 0;
                     
-                    // Collect all materials
+                    // Collect all materials and enable shadows
                     currentModel.traverse(function(child) {
-                        if (child.isMesh && child.material) {
-                            if (Array.isArray(child.material)) {
-                                currentMaterials.push(...child.material);
-                            } else {
-                                currentMaterials.push(child.material);
+                        if (child.isMesh) {
+                            meshCount++;
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            
+                            if (child.material) {
+                                if (Array.isArray(child.material)) {
+                                    currentMaterials.push(...child.material);
+                                } else {
+                                    currentMaterials.push(child.material);
+                                }
                             }
                         }
                     });
                     
-                    // Set up materials for PBR
+                    // Set up materials for PBR with environment
                     currentMaterials.forEach(material => {
                         if (material.isMeshStandardMaterial) {
-                            material.envMap = envMap;
+                            material.envMap = currentEnvMap;
+                            material.needsUpdate = true;
                         }
                     });
                     
@@ -600,12 +1005,15 @@
                     const box = new THREE.Box3().setFromObject(currentModel);
                     const size = box.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 1.5 / maxDim;
-                    currentModel.scale.setScalar(scale);
+                    characterScale = 1.5 / maxDim;
+                    currentModel.scale.setScalar(characterScale);
                     
-                    // Center model
+                    // Center model on ground at current character position
                     const center = box.getCenter(new THREE.Vector3());
-                    currentModel.position.sub(center.multiplyScalar(scale));
+                    center.multiplyScalar(characterScale);
+                    currentModel.position.x = characterPosition.x - center.x;
+                    currentModel.position.z = characterPosition.z - center.z;
+                    currentModel.position.y = -box.min.y * characterScale;
                     
                     scene.add(currentModel);
                     
@@ -613,9 +1021,10 @@
                     modelInfo.style.display = 'block';
                     modelNameSpan.textContent = file.name;
                     materialCountSpan.textContent = currentMaterials.length;
+                    meshCountSpan.textContent = meshCount;
                     
-                    // Apply current settings
-                    updateMaterial();
+                    // Apply current lighting settings
+                    updateLighting();
                     
                 }, function(error) {
                     console.error('Error parsing GLTF:', error);
@@ -625,111 +1034,123 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // Load default model (demo)
-        function loadDefaultModel() {
-            // Create a more complex default model
-            if (currentModel) {
-                scene.remove(currentModel);
+        // Load HDRI environment from file
+        function loadHDRIEnvironment(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const arrayBuffer = event.target.result;
+                
+                rgbeLoader.load(URL.createObjectURL(file), function(texture) {
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+                    
+                    scene.background = texture;
+                    scene.environment = texture;
+                    currentEnvMap = texture;
+                    
+                    // Update all materials with new environment
+                    currentMaterials.forEach(material => {
+                        if (material.isMeshStandardMaterial) {
+                            material.envMap = texture;
+                            material.needsUpdate = true;
+                        }
+                    });
+                    
+                    // Create HDRI preview
+                    createHDRIPreview(texture);
+                    
+                }, undefined, function(error) {
+                    console.error('Error loading HDRI:', error);
+                    alert('Error loading HDRI. Please check if it\'s a valid HDR/EXR file.');
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Create HDRI preview
+        function createHDRIPreview(texture) {
+            const canvas = document.getElementById('hdriPreview');
+            const ctx = canvas.getContext('2d');
+            
+            // Create a simple preview by rendering the texture to canvas
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            // Create gradient as preview placeholder
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(0.5, '#FFD700');
+            gradient.addColorStop(1, '#FF6347');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add text overlay
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('HDRI Loaded', canvas.width/2, canvas.height/2);
+        }
+
+        // Toggle light helpers
+        function toggleLightHelpers() {
+            helpersVisible = showHelpersCheckbox.checked;
+            
+            if (helpersVisible) {
+                scene.add(dirLightHelper);
+                scene.add(pointLightHelper);
+                scene.add(spotLightHelper);
+            } else {
+                scene.remove(dirLightHelper);
+                scene.remove(pointLightHelper);
+                scene.remove(spotLightHelper);
             }
-            
-            const group = new THREE.Group();
-            
-            // Main sphere
-            const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-            const sphereMaterial = new THREE.MeshStandardMaterial({
-                color: 0x4fc3f7,
-                metalness: 0.7,
-                roughness: 0.2,
-                envMap: envMap,
-                envMapIntensity: 1.0
-            });
-            const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-            sphere.position.y = 0.5;
-            group.add(sphere);
-            
-            // Base cylinder
-            const cylinderGeometry = new THREE.CylinderGeometry(0.6, 0.8, 0.3, 16);
-            const cylinderMaterial = new THREE.MeshStandardMaterial({
-                color: 0xff7043,
-                metalness: 0.1,
-                roughness: 0.8,
-                envMap: envMap,
-                envMapIntensity: 0.5
-            });
-            const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
-            cylinder.position.y = 0.15;
-            group.add(cylinder);
-            
-            currentModel = group;
-            currentMaterials = [sphereMaterial, cylinderMaterial];
-            scene.add(currentModel);
-            
-            // Update UI
-            modelInfo.style.display = 'block';
-            modelNameSpan.textContent = 'Default Model';
-            materialCountSpan.textContent = currentMaterials.length;
         }
 
         // Event listeners
-        baseColorPicker.addEventListener('input', updateMaterial);
-        metallicSlider.addEventListener('input', updateMaterial);
-        roughnessSlider.addEventListener('input', updateMaterial);
-        normalScaleSlider.addEventListener('input', updateMaterial);
-        envIntensitySlider.addEventListener('input', updateMaterial);
+        envIntensitySlider.addEventListener('input', updateLighting);
+        
+        // Directional light controls
+        dirIntensitySlider.addEventListener('input', updateLighting);
+        dirColorPicker.addEventListener('input', updateLighting);
+        dirEnabledCheckbox.addEventListener('change', updateLighting);
+        
+        // Point light controls
+        pointIntensitySlider.addEventListener('input', updateLighting);
+        pointColorPicker.addEventListener('input', updateLighting);
+        pointDistanceSlider.addEventListener('input', updateLighting);
+        pointEnabledCheckbox.addEventListener('change', updateLighting);
+        
+        // Spot light controls
+        spotIntensitySlider.addEventListener('input', updateLighting);
+        spotColorPicker.addEventListener('input', updateLighting);
+        spotAngleSlider.addEventListener('input', updateLighting);
+        spotPenumbraSlider.addEventListener('input', updateLighting);
+        spotEnabledCheckbox.addEventListener('change', updateLighting);
 
-        // Model loading
+        // Light helpers toggle
+        showHelpersCheckbox.addEventListener('change', toggleLightHelpers);
+
+        // File inputs
         modelInput.addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
-                loadModel(file);
+                loadCharacterModel(file);
             }
         });
 
-        // Texture loading
-        albedoMapInput.addEventListener('change', function(event) {
+        hdriInput.addEventListener('change', function(event) {
             const file = event.target.files[0];
-            if (file) loadTexture(file, null, 'map', 'albedoPreview');
-        });
-
-        normalMapInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) loadTexture(file, null, 'normalMap', 'normalPreview');
-        });
-
-        metallicMapInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) loadTexture(file, null, 'metalnessMap', 'metallicPreview');
-        });
-
-        roughnessMapInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) loadTexture(file, null, 'roughnessMap', 'roughnessPreview');
-        });
-
-        aoMapInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) loadTexture(file, null, 'aoMap', 'aoPreview');
-        });
-
-        // Preset materials
-        const presets = {
-            chrome: { color: '#c0c0c0', metallic: 1.0, roughness: 0.05 },
-            gold: { color: '#ffd700', metallic: 1.0, roughness: 0.1 },
-            plastic: { color: '#ff4444', metallic: 0.0, roughness: 0.5 },
-            rubber: { color: '#333333', metallic: 0.0, roughness: 0.9 },
-            ceramic: { color: '#f0f0f0', metallic: 0.0, roughness: 0.1 },
-            wood: { color: '#8b4513', metallic: 0.0, roughness: 0.8 }
-        };
-
-        function applyPreset(presetName) {
-            const preset = presets[presetName];
-            if (preset) {
-                baseColorPicker.value = preset.color;
-                metallicSlider.value = preset.metallic;
-                roughnessSlider.value = preset.roughness;
-                updateMaterial();
+            if (file) {
+                loadHDRIEnvironment(file);
             }
-        }
+        });
+
+        // Key button visual feedback
+        document.querySelectorAll('.key-btn').forEach(btn => {
+            btn.addEventListener('mousedown', () => btn.classList.add('active'));
+            btn.addEventListener('mouseup', () => btn.classList.remove('active'));
+            btn.addEventListener('mouseleave', () => btn.classList.remove('active'));
+        });
 
         // Resize handler
         window.addEventListener('resize', () => {
@@ -742,17 +1163,49 @@
         function animate() {
             requestAnimationFrame(animate);
             
-            // Auto rotation
-            if (autoRotateCheckbox.checked && currentModel) {
+            // Move character based on keyboard input
+            moveCharacter();
+            
+            // Auto rotation (disabled by default now)
+            if (autoRotateCheckbox.checked && currentModel && !keys['ArrowUp'] && !keys['ArrowDown'] && !keys['ArrowLeft'] && !keys['ArrowRight']) {
                 currentModel.rotation.y += 0.005;
+            }
+            
+            // Animate point light position
+            const time = Date.now() * 0.001;
+            pointLight.position.x = Math.cos(time * 0.5) * 3;
+            pointLight.position.z = Math.sin(time * 0.5) * 3;
+            
+            // Animate spot light target
+            spotLight.target.position.x = Math.sin(time * 0.3) * 0.5;
+            
+            // Update light helpers if visible
+            if (helpersVisible) {
+                dirLightHelper.update();
+                pointLightHelper.update();
+                spotLightHelper.update();
             }
             
             controls.update();
             renderer.render(scene, camera);
         }
 
-        // Initialize
-        updateMaterial();
+        // Initialize everything
+        function initialize() {
+            // Load default HDRI first
+            loadDefaultHDRI();
+            
+            // Then load default character
+            setTimeout(() => {
+                loadDefaultCharacter();
+            }, 1000);
+            
+            // Initialize lighting
+            updateLighting();
+        }
+
+        // Start the application
+        initialize();
         animate();
     </script>
 </body>
