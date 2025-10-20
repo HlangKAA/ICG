@@ -1,370 +1,618 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="utf-8" />
   <title>Interactive 3D Portfolio with Picking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    html,body{height:100%;margin:0;font-family:Arial,sans-serif} 
-    canvas{display:block;cursor:crosshair}
-    #info{position:absolute;top:10px;left:10px;color:white;background:rgba(0,0,0,0.8);padding:15px;border-radius:8px;font-size:14px;backdrop-filter:blur(10px);border:1px solid rgba(93,255,155,0.3);max-width:300px;z-index:10}
-    #info h3{margin:0 0 10px;color:#5dff9b}
-    .feature{margin:5px 0;padding:5px;background:rgba(93,255,155,0.1);border-radius:4px}
-    
-    #crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;pointer-events:none;z-index:5;display:none}
-    #crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.9);box-shadow:0 0 5px rgba(0,0,0,0.5)}
-    #crosshair::before{width:2px;height:20px;left:9px;top:0}
-    #crosshair::after{width:20px;height:2px;left:0;top:9px}
-    
-    #cameraInfo{position:absolute;bottom:10px;left:10px;color:white;background:rgba(0,0,0,0.8);padding:10px 15px;border-radius:8px;font-size:12px;backdrop-filter:blur(10px);border:1px solid rgba(93,181,255,0.3);z-index:10}
-    #cameraInfo h4{margin:0 0 5px;color:#5db5ff;font-size:13px}
-    
-    #popupOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(5px);display:none;justify-content:center;align-items:center;z-index:1000;animation:fadeIn 0.3s ease}
-    
-    #popupModal{background:linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);border-radius:15px;padding:30px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);border:2px solid rgba(93,255,155,0.3);animation:slideIn 0.3s ease;position:relative}
-    
-    #popupModal h2{margin:0 0 20px;color:#5dff9b;font-size:28px;text-align:center;text-shadow:0 0 10px rgba(93,255,155,0.5)}
-    
-    .info-section{background:rgba(0,0,0,0.3);padding:15px;margin:10px 0;border-radius:8px;border-left:4px solid #5dff9b}
-    
-    .info-row{display:flex;justify-content:space-between;margin:8px 0;color:white}
-    .info-label{font-weight:bold;color:#5db5ff}
-    .info-value{color:#5dff9b;font-family:monospace}
-    
-    .close-btn{position:absolute;top:15px;right:15px;background:rgba(255,107,107,0.2);border:2px solid #ff6b6b;color:#ff6b6b;width:35px;height:35px;border-radius:50%;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:all 0.3s ease}
-    .close-btn:hover{background:#ff6b6b;color:white;transform:rotate(90deg)}
-    
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    @keyframes slideIn{from{transform:translateY(-50px);opacity:0}to{transform:translateY(0);opacity:1}}
-    
-    .coordinate-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}
-    .coord-box{background:rgba(93,255,155,0.1);padding:10px;border-radius:8px;text-align:center;border:1px solid rgba(93,255,155,0.3)}
-    .coord-label{font-size:12px;color:#5db5ff;margin-bottom:5px}
-    .coord-value{font-size:20px;color:#5dff9b;font-weight:bold;font-family:monospace}
-    
-    .stats-badge{display:inline-block;background:rgba(93,181,255,0.2);color:#5db5ff;padding:5px 15px;border-radius:20px;margin:5px;font-size:12px;border:1px solid rgba(93,181,255,0.3)}
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif
+    }
+
+    canvas {
+      display: block;
+      cursor: crosshair
+    }
+
+    #info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(93, 255, 155, 0.3);
+      max-width: 300px;
+      z-index: 10
+    }
+
+    #info h3 {
+      margin: 0 0 10px;
+      color: #5dff9b
+    }
+
+    .feature {
+      margin: 5px 0;
+      padding: 5px;
+      background: rgba(93, 255, 155, 0.1);
+      border-radius: 4px
+    }
+
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+      z-index: 5;
+      display: none
+    }
+
+    #crosshair::before,
+    #crosshair::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5)
+    }
+
+    #crosshair::before {
+      width: 2px;
+      height: 20px;
+      left: 9px;
+      top: 0
+    }
+
+    #crosshair::after {
+      width: 20px;
+      height: 2px;
+      left: 0;
+      top: 9px
+    }
+
+    #cameraInfo {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      color: white;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 12px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(93, 181, 255, 0.3);
+      z-index: 10
+    }
+
+    #cameraInfo h4 {
+      margin: 0 0 5px;
+      color: #5db5ff;
+      font-size: 13px
+    }
+
+    #popupOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.3s ease
+    }
+
+    #popupModal {
+      background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
+      border-radius: 15px;
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(93, 255, 155, 0.3);
+      animation: slideIn 0.3s ease;
+      position: relative
+    }
+
+    #popupModal h2 {
+      margin: 0 0 20px;
+      color: #5dff9b;
+      font-size: 28px;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(93, 255, 155, 0.5)
+    }
+
+    .info-section {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border-left: 4px solid #5dff9b
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+      color: white
+    }
+
+    .info-label {
+      font-weight: bold;
+      color: #5db5ff
+    }
+
+    .info-value {
+      color: #5dff9b;
+      font-family: monospace
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(255, 107, 107, 0.2);
+      border: 2px solid #ff6b6b;
+      color: #ff6b6b;
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease
+    }
+
+    .close-btn:hover {
+      background: #ff6b6b;
+      color: white;
+      transform: rotate(90deg)
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1
+      }
+    }
+
+    .coordinate-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 15px 0
+    }
+
+    .coord-box {
+      background: rgba(93, 255, 155, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid rgba(93, 255, 155, 0.3)
+    }
+
+    .coord-label {
+      font-size: 12px;
+      color: #5db5ff;
+      margin-bottom: 5px
+    }
+
+    .coord-value {
+      font-size: 20px;
+      color: #5dff9b;
+      font-weight: bold;
+      font-family: monospace
+    }
+
+    .stats-badge {
+      display: inline-block;
+      background: rgba(93, 181, 255, 0.2);
+      color: #5db5ff;
+      padding: 5px 15px;
+      border-radius: 20px;
+      margin: 5px;
+      font-size: 12px;
+      border: 1px solid rgba(93, 181, 255, 0.3)
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
+
 <body>
-<div id="info">
-  <h3>✨ Advanced Features</h3>
-  <div class="feature">🎨 PBR Materials</div>
-  <div class="feature">🎭 Cel Shading</div>
-  <div class="feature">🌊 Vertex Shader Animation</div>
-  <div class="feature">🖱️ Object Picking</div>
-  <hr style="border:1px solid rgba(255,255,255,0.2);margin:10px 0">
-  <small>👆 คลิกวัตถุเพื่อดูข้อมูล<br>
-  🖱️ คลิกซ้าย: เข้า FPS Mode<br>
-  ⌨️ WASD: เดิน | เมาส์: มองรอบตัว<br>
-  🎯 คลิกขวา: Pick วัตถุใน FPS Mode<br>
-  ESC: ออกจาก FPS Mode</small>
-</div>
+  <div id="info">
+    <h3>✨ Advanced Features</h3>
+    <div class="feature">🎨 PBR Materials</div>
+    <div class="feature">🎭 Cel Shading</div>
+    <div class="feature">🌊 Vertex Shader Animation</div>
+    <div class="feature">🖱️ Object Picking</div>
+    <hr style="border:1px solid rgba(255,255,255,0.2);margin:10px 0">
+    <small>👆 คลิกวัตถุเพื่อดูข้อมูล<br>
+      🖱️ คลิกซ้าย: เข้า FPS Mode / Pick วัตถุ<br>
+      ⌨️ WASD: เดิน | เมาส์: มองรอบตัว<br>
+      ESC: ออกจาก FPS Mode</small>
+  </div>
 
-<div id="crosshair"></div>
+  <div id="crosshair"></div>
 
-<div id="cameraInfo">
-  <h4>📷 Camera Position</h4>
-  <p id="cameraPos">X: 0.0, Y: 3.0, Z: 8.0</p>
-</div>
+  <div id="cameraInfo">
+    <h4>📷 Camera Position</h4>
+    <p id="cameraPos">X: 1.0, Y: 3.0, Z: 10.0</p>
+  </div>
 
-<div id="popupOverlay">
-  <div id="popupModal">
-    <div class="close-btn" onclick="closePopup()">✕</div>
-    <h2 id="popupTitle">📦 Object Information</h2>
-    
-    <div class="info-section">
-      <div class="info-row">
-        <span class="info-label">🏷️ Name:</span>
-        <span class="info-value" id="popupName">-</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">🎨 Type:</span>
-        <span class="info-value" id="popupType">-</span>
-      </div>
-    </div>
-    
-    <div class="info-section">
-      <h3 style="color:#5db5ff;margin:0 0 10px;font-size:16px">📍 Position Coordinates</h3>
-      <div class="coordinate-grid">
-        <div class="coord-box">
-          <div class="coord-label">X Axis</div>
-          <div class="coord-value" id="popupPosX">0.00</div>
+  <div id="popupOverlay">
+    <div id="popupModal">
+      <div class="close-btn" onclick="closePopup()">✕</div>
+      <h2 id="popupTitle">📦 Object Information</h2>
+
+      <div class="info-section">
+        <div class="info-row">
+          <span class="info-label">🏷️ Name:</span>
+          <span class="info-value" id="popupName">-</span>
         </div>
-        <div class="coord-box">
-          <div class="coord-label">Y Axis</div>
-          <div class="coord-value" id="popupPosY">0.00</div>
-        </div>
-        <div class="coord-box">
-          <div class="coord-label">Z Axis</div>
-          <div class="coord-value" id="popupPosZ">0.00</div>
+        <div class="info-row">
+          <span class="info-label">🎨 Type:</span>
+          <span class="info-value" id="popupType">-</span>
         </div>
       </div>
-    </div>
-    
-    <div class="info-section">
-      <h3 style="color:#5db5ff;margin:0 0 10px;font-size:16px">📊 Object Stats</h3>
-      <div id="popupStats"></div>
+
+      <div class="info-section">
+        <h3 style="color:#5db5ff;margin:0 0 10px;font-size:16px">📍 Position Coordinates</h3>
+        <div class="coordinate-grid">
+          <div class="coord-box">
+            <div class="coord-label">X Axis</div>
+            <div class="coord-value" id="popupPosX">0.00</div>
+          </div>
+          <div class="coord-box">
+            <div class="coord-label">Y Axis</div>
+            <div class="coord-value" id="popupPosY">0.00</div>
+          </div>
+          <div class="coord-box">
+            <div class="coord-label">Z Axis</div>
+            <div class="coord-value" id="popupPosZ">0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h3 style="color:#5db5ff;margin:0 0 10px;font-size:16px">📊 Object Stats</h3>
+        <div id="popupStats"></div>
+      </div>
     </div>
   </div>
-</div>
 
-<script>
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1a1a2e);
-  scene.fog = new THREE.Fog(0x1a1a2e, 10, 25);
+  <script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+    scene.fog = new THREE.Fog(0x1a1a2e, 10, 30);
 
-  const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 100);
-  camera.position.set(0, 3, 8);
+    const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+    // ✅ แก้ไข 1: เปลี่ยนตำแหน่งเริ่มต้นของกล้อง
+    camera.position.set(1, 3, 10);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.outputEncoding = THREE.sRGBEncoding;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
-  document.body.appendChild(renderer.domElement);
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true
+    });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    document.body.appendChild(renderer.domElement);
 
-  let moveForward = false, moveBackward = false;
-  let moveLeft = false, moveRight = false;
-  let velocity = new THREE.Vector3();
-  let direction = new THREE.Vector3();
-  const speed = 10.0;
-  let yaw = 0, pitch = 0;
-  let isPointerLocked = false;
-  
-  renderer.domElement.addEventListener('click', (e) => {
-    if (e.button === 0 && !isPointerLocked) {
-      renderer.domElement.requestPointerLock();
-    }
-  });
-  
-  renderer.domElement.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    if (isPointerLocked) {
-      pickObjectAtCenter();
-    }
-  });
-  
-  document.addEventListener('pointerlockchange', () => {
-    isPointerLocked = document.pointerLockElement === renderer.domElement;
-    const crosshair = document.getElementById('crosshair');
-    if (isPointerLocked) {
-      renderer.domElement.style.cursor = 'none';
-      crosshair.style.display = 'block';
-    } else {
-      renderer.domElement.style.cursor = 'crosshair';
-      crosshair.style.display = 'none';
-    }
-  });
-  
-  document.addEventListener('mousemove', (e) => {
-    if (!isPointerLocked) return;
-    yaw -= e.movementX * 0.002;
-    pitch -= e.movementY * 0.002;
-    pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
-    camera.rotation.order = 'YXZ';
-    camera.rotation.y = yaw;
-    camera.rotation.x = pitch;
-  });
-  
-  document.addEventListener('keydown', (e) => {
-    switch(e.code) {
-      case 'KeyW': moveForward = true; break;
-      case 'KeyS': moveBackward = true; break;
-      case 'KeyA': moveLeft = true; break;
-      case 'KeyD': moveRight = true; break;
-    }
-  });
-  
-  document.addEventListener('keyup', (e) => {
-    switch(e.code) {
-      case 'KeyW': moveForward = false; break;
-      case 'KeyS': moveBackward = false; break;
-      case 'KeyA': moveLeft = false; break;
-      case 'KeyD': moveRight = false; break;
-    }
-  });
+    let moveForward = false,
+      moveBackward = false;
+    let moveLeft = false,
+      moveRight = false;
+    let velocity = new THREE.Vector3();
+    let direction = new THREE.Vector3();
+    const speed = 10.0;
+    let yaw = 0,
+      pitch = 0;
+    let isPointerLocked = false;
 
-  function showPopup(object) {
-    const pos = object.position;
-    const scale = object.scale;
-    
-    document.getElementById('popupName').textContent = object.userData.name || 'Unknown';
-    document.getElementById('popupType').textContent = object.userData.type || 'Unknown';
-    document.getElementById('popupPosX').textContent = pos.x.toFixed(2);
-    document.getElementById('popupPosY').textContent = pos.y.toFixed(2);
-    document.getElementById('popupPosZ').textContent = pos.z.toFixed(2);
-    
-    const statsHtml = `
+    renderer.domElement.addEventListener('click', (e) => {
+      if (e.button === 0) {
+        if (!isPointerLocked) {
+          renderer.domElement.requestPointerLock();
+        } else {
+          pickObjectAtCenter();
+        }
+      }
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      isPointerLocked = document.pointerLockElement === renderer.domElement;
+      const crosshair = document.getElementById('crosshair');
+      if (isPointerLocked) {
+        renderer.domElement.style.cursor = 'none';
+        crosshair.style.display = 'block';
+      } else {
+        renderer.domElement.style.cursor = 'crosshair';
+        crosshair.style.display = 'none';
+        closePopup();
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isPointerLocked) return;
+      yaw -= e.movementX * 0.002;
+      pitch -= e.movementY * 0.002;
+      pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+      camera.rotation.order = 'YXZ';
+      camera.rotation.y = yaw;
+      camera.rotation.x = pitch;
+    });
+
+    document.addEventListener('keydown', (e) => {
+      switch (e.code) {
+        case 'KeyW':
+          moveForward = true;
+          break;
+        case 'KeyS':
+          moveBackward = true;
+          break;
+        case 'KeyA':
+          moveLeft = true;
+          break;
+        case 'KeyD':
+          moveRight = true;
+          break;
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      switch (e.code) {
+        case 'KeyW':
+          moveForward = false;
+          break;
+        case 'KeyS':
+          moveBackward = false;
+          break;
+        case 'KeyA':
+          moveLeft = false;
+          break;
+        case 'KeyD':
+          moveRight = false;
+          break;
+      }
+    });
+
+    function showPopup(object) {
+      const pos = new THREE.Vector3();
+      object.getWorldPosition(pos);
+      const scale = new THREE.Vector3();
+      object.getWorldScale(scale);
+
+      document.getElementById('popupName').textContent = object.userData.name || 'Unknown';
+      document.getElementById('popupType').textContent = object.userData.type || 'Unknown';
+      document.getElementById('popupPosX').textContent = pos.x.toFixed(2);
+      document.getElementById('popupPosY').textContent = pos.y.toFixed(2);
+      document.getElementById('popupPosZ').textContent = pos.z.toFixed(2);
+
+      const statsHtml = `
       <span class="stats-badge">Scale: ${scale.x.toFixed(2)}</span>
       <span class="stats-badge">Distance: ${camera.position.distanceTo(pos).toFixed(2)}m</span>
       ${object.geometry ? `<span class="stats-badge">Vertices: ${object.geometry.attributes.position.count}</span>` : ''}
     `;
-    document.getElementById('popupStats').innerHTML = statsHtml;
-    
-    document.getElementById('popupOverlay').style.display = 'flex';
-  }
-  
-  function closePopup() {
-    document.getElementById('popupOverlay').style.display = 'none';
-  }
-  
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      closePopup();
-    }
-  });
-  
-  document.getElementById('popupOverlay').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('popupOverlay')) {
-      closePopup();
-    }
-  });
+      document.getElementById('popupStats').innerHTML = statsHtml;
 
-  const raycaster = new THREE.Raycaster();
-  const pointer = new THREE.Vector2();
-  const clickableObjects = [];
-  let selectedObject = null;
-  let cameraTargetPosition = new THREE.Vector3(0, 3, 8);
-  let cameraTargetLookAt = new THREE.Vector3(0, 0, 0);
-
-  function pickObjectAtCenter() {
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-    const intersects = raycaster.intersectObjects(clickableObjects, true);
-    
-    if (intersects.length > 0) {
-      selectedObject = intersects[0].object;
-      showPopup(selectedObject);
-      console.log('Selected:', selectedObject.userData.name, 'at', selectedObject.position);
+      document.getElementById('popupOverlay').style.display = 'flex';
     }
-  }
 
-  function onPointerMove(event) {
-    if (isPointerLocked) return;
-    
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    
-    raycaster.setFromCamera(pointer, camera);
-    const intersects = raycaster.intersectObjects(clickableObjects, false);
-    
-    clickableObjects.forEach(obj => {
-      if (obj.userData.originalScale) {
-        obj.scale.copy(obj.userData.originalScale);
+    function closePopup() {
+      document.getElementById('popupOverlay').style.display = 'none';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closePopup();
       }
     });
-    
-    if (intersects.length > 0) {
-      const obj = intersects[0].object;
-      if (!obj.userData.originalScale) {
-        obj.userData.originalScale = obj.scale.clone();
+
+    document.getElementById('popupOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('popupOverlay')) {
+        closePopup();
       }
-      obj.scale.multiplyScalar(1.1);
-      renderer.domElement.style.cursor = 'pointer';
-    } else {
-      renderer.domElement.style.cursor = 'crosshair';
+    });
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const clickableObjects = [];
+    let selectedObject = null;
+
+    let cameraTargetPosition = new THREE.Vector3(1, 3, 10);
+    let cameraTargetLookAt = new THREE.Vector3(0, 0, 0);
+
+    function pickObjectAtCenter() {
+      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+      const intersects = raycaster.intersectObjects(clickableObjects, true);
+
+      if (intersects.length > 0) {
+        let clickedMesh = intersects[0].object;
+        let targetObject = clickedMesh;
+        while (targetObject.parent && !clickableObjects.includes(targetObject)) {
+          targetObject = targetObject.parent;
+        }
+        selectedObject = targetObject;
+        showPopup(selectedObject);
+      }
     }
-  }
 
-  function onPointerClick(event) {
-    if (isPointerLocked) return;
-    if (event.button !== 0) return;
-    
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    
-    raycaster.setFromCamera(pointer, camera);
-    const intersects = raycaster.intersectObjects(clickableObjects, false);
-    
-    if (intersects.length > 0) {
-      selectedObject = intersects[0].object;
-      showPopup(selectedObject);
-      
-      const pos = selectedObject.position;
-      const offset = new THREE.Vector3(0, 2, 5);
-      cameraTargetPosition.copy(pos).add(offset);
-      cameraTargetLookAt.copy(pos);
-    } else {
-      selectedObject = null;
-      cameraTargetPosition.set(0, 3, 8);
-      cameraTargetLookAt.set(0, 0, 0);
+    function onPointerMove(event) {
+      if (isPointerLocked) return;
+
+      pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const intersects = raycaster.intersectObjects(clickableObjects, true);
+
+      clickableObjects.forEach(obj => {
+        if (obj.userData.originalScale) {
+          obj.scale.copy(obj.userData.originalScale);
+          delete obj.userData.originalScale;
+        }
+      });
+
+      if (intersects.length > 0) {
+        let hoveredMesh = intersects[0].object;
+        let targetObject = hoveredMesh;
+        while (targetObject.parent && !clickableObjects.includes(targetObject)) {
+          targetObject = targetObject.parent;
+        }
+
+        if (!targetObject.userData.originalScale) {
+          targetObject.userData.originalScale = targetObject.scale.clone();
+        }
+        targetObject.scale.multiplyScalar(1.1);
+        renderer.domElement.style.cursor = 'pointer';
+      } else {
+        renderer.domElement.style.cursor = 'crosshair';
+      }
     }
-  }
 
-  window.addEventListener('pointermove', onPointerMove);
-  window.addEventListener('click', onPointerClick);
+    function onPointerClick(event) {
+      if (isPointerLocked) return;
+      if (event.button !== 0) return;
 
-  const floorGeometry = new THREE.PlaneGeometry(30, 30);
-  const floorMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x2a2a3e,
-    roughness: 0.7,
-    metalness: 0.3,
-  });
-  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-  floor.rotation.x = -Math.PI / 2;
-  floor.receiveShadow = true;
-  scene.add(floor);
+      pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-  scene.add(ambientLight);
+      raycaster.setFromCamera(pointer, camera);
+      const intersects = raycaster.intersectObjects(clickableObjects, true);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-  directionalLight.position.set(5, 10, 5);
-  directionalLight.castShadow = true;
-  directionalLight.shadow.mapSize.width = 2048;
-  directionalLight.shadow.mapSize.height = 2048;
-  directionalLight.shadow.camera.near = 0.5;
-  directionalLight.shadow.camera.far = 50;
-  directionalLight.shadow.camera.left = -15;
-  directionalLight.shadow.camera.right = 15;
-  directionalLight.shadow.camera.top = 15;
-  directionalLight.shadow.camera.bottom = -15;
-  scene.add(directionalLight);
+      if (intersects.length > 0) {
+        let clickedMesh = intersects[0].object;
+        let targetObject = clickedMesh;
+        while (targetObject.parent && !clickableObjects.includes(targetObject)) {
+          targetObject = targetObject.parent;
+        }
+        selectedObject = targetObject;
+        showPopup(selectedObject);
 
-  const pointLight1 = new THREE.PointLight(0x5dff9b, 1.0, 20);
-  pointLight1.position.set(5, 4, 5);
-  pointLight1.castShadow = true;
-  scene.add(pointLight1);
+        const pos = new THREE.Vector3();
+        selectedObject.getWorldPosition(pos);
+        const offset = new THREE.Vector3(0, 2, 5);
+        cameraTargetPosition.copy(pos).add(offset);
+        cameraTargetLookAt.copy(pos);
+      } else {
+        selectedObject = null;
+        // ✅ แก้ไข 3: ลบโค้ดที่รีเซ็ตตำแหน่งกล้องออก
+        // cameraTargetPosition.set(1, 3, 10);
+        // cameraTargetLookAt.set(0, 0, 0);
+      }
+    }
 
-  const pointLight2 = new THREE.PointLight(0x5db6ff, 0.8, 15);
-  pointLight2.position.set(-5, 3, -5);
-  scene.add(pointLight2);
+    window.addEventListener('pointermove', onPointerMove);
+    // ✅ เราใช้ click listener ที่ renderer.domElement แทนแล้ว จึงไม่จำเป็นต้องมีตัวนี้ซ้ำซ้อน
+    // window.addEventListener('click', onPointerClick);
 
-  const pbrGeometry = new THREE.SphereGeometry(0.8, 64, 64);
-  
-  const metallicMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    metalness: 1.0,
-    roughness: 0.1,
-  });
-  const metallicSphere = new THREE.Mesh(pbrGeometry, metallicMaterial);
-  metallicSphere.position.set(12, 3, -12);
-  metallicSphere.castShadow = true;
-  metallicSphere.receiveShadow = true;
-  metallicSphere.userData = { name: 'Metallic Sphere', type: 'PBR Material (Metal)' };
-  scene.add(metallicSphere);
-  clickableObjects.push(metallicSphere);
+    const floorGeometry = new THREE.PlaneGeometry(30, 30);
+    const floorMaterial = new THREE.MeshStandardMaterial({
+      color: 0x2a2a3e,
+      roughness: 0.7,
+      metalness: 0.3,
+    });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
 
-  const roughMaterial = new THREE.MeshStandardMaterial({
-    color: 0xff6b6b,
-    metalness: 0.0,
-    roughness: 0.9,
-  });
-  const roughSphere = new THREE.Mesh(pbrGeometry, roughMaterial);
-  roughSphere.position.set(12, 3, -9);
-  roughSphere.castShadow = true;
-  roughSphere.receiveShadow = true;
-  roughSphere.userData = { name: 'Rough Sphere', type: 'PBR Material (Rough)' };
-  scene.add(roughSphere);
-  clickableObjects.push(roughSphere);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
 
-  const celVertexShader = `
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    directionalLight.position.set(5, 10, 5);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 50;
+    directionalLight.shadow.camera.left = -15;
+    directionalLight.shadow.camera.right = 15;
+    directionalLight.shadow.camera.top = 15;
+    directionalLight.shadow.camera.bottom = -15;
+    scene.add(directionalLight);
+
+    const pointLight1 = new THREE.PointLight(0x5dff9b, 1.0, 20);
+    pointLight1.position.set(5, 4, 5);
+    pointLight1.castShadow = true;
+    scene.add(pointLight1);
+
+    const pointLight2 = new THREE.PointLight(0x5db6ff, 0.8, 15);
+    pointLight2.position.set(-5, 3, -5);
+    scene.add(pointLight2);
+
+    const pbrGeometry = new THREE.SphereGeometry(0.8, 64, 64);
+
+    const metallicMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      metalness: 1.0,
+      roughness: 0.1,
+    });
+    const metallicSphere = new THREE.Mesh(pbrGeometry, metallicMaterial);
+    // ✅ แก้ไข 2: ย้ายตำแหน่งวัตถุ
+    metallicSphere.position.set(12, 1, -12);
+    metallicSphere.castShadow = true;
+    metallicSphere.receiveShadow = true;
+    metallicSphere.userData = {
+      name: 'Metallic Sphere',
+      type: 'PBR Material (Metal)'
+    };
+    scene.add(metallicSphere);
+    clickableObjects.push(metallicSphere);
+
+    const roughMaterial = new THREE.MeshStandardMaterial({
+      color: 0xff6b6b,
+      metalness: 0.0,
+      roughness: 0.9,
+    });
+    const roughSphere = new THREE.Mesh(pbrGeometry, roughMaterial);
+    // ✅ แก้ไข 2: ย้ายตำแหน่งวัตถุ
+    roughSphere.position.set(12, 1, -9);
+    roughSphere.castShadow = true;
+    roughSphere.receiveShadow = true;
+    roughSphere.userData = {
+      name: 'Rough Sphere',
+      type: 'PBR Material (Rough)'
+    };
+    scene.add(roughSphere);
+    clickableObjects.push(roughSphere);
+
+    const celVertexShader = `
     varying vec3 vNormal;
     varying vec3 vViewPosition;
-    
     void main() {
       vNormal = normalize(normalMatrix * normal);
       vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
@@ -372,22 +620,19 @@
       gl_Position = projectionMatrix * mvPosition;
     }
   `;
-  
-  const celFragmentShader = `
+
+    const celFragmentShader = `
     uniform vec3 uColor;
     uniform vec3 uLightPosition;
     varying vec3 vNormal;
     varying vec3 vViewPosition;
-    
     void main() {
       vec3 lightDir = normalize(uLightPosition - vViewPosition);
       float intensity = dot(vNormal, lightDir);
-      
       if (intensity > 0.95) intensity = 1.0;
       else if (intensity > 0.5) intensity = 0.7;
       else if (intensity > 0.25) intensity = 0.4;
       else intensity = 0.2;
-      
       float edge = max(0.0, dot(vNormal, normalize(vViewPosition)));
       if (edge < 0.3) {
         gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
@@ -396,199 +641,212 @@
       }
     }
   `;
-  
-  const celMaterial = new THREE.ShaderMaterial({
-    uniforms: {
-      uColor: { value: new THREE.Color(0x5dff9b) },
-      uLightPosition: { value: new THREE.Vector3(5, 10, 5) }
-    },
-    vertexShader: celVertexShader,
-    fragmentShader: celFragmentShader
-  });
-  
-  const celBox = new THREE.Mesh(
-    new THREE.BoxGeometry(1.5, 1.5, 1.5),
-    celMaterial
-  );
-  celBox.position.set(12, 3, -6);
-  celBox.castShadow = true;
-  celBox.userData = { name: 'Cel Shaded Box', type: 'Custom Shader (Cel Shading)' };
-  scene.add(celBox);
-  clickableObjects.push(celBox);
 
-  const waveVertexShader = `
+    const celMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: {
+          value: new THREE.Color(0x5dff9b)
+        },
+        uLightPosition: {
+          value: new THREE.Vector3(5, 10, 5)
+        }
+      },
+      vertexShader: celVertexShader,
+      fragmentShader: celFragmentShader
+    });
+
+    const celBox = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5, 1.5, 1.5),
+      celMaterial
+    );
+    // ✅ แก้ไข 2: ย้ายตำแหน่งวัตถุ
+    celBox.position.set(12, 0.75, -6);
+    celBox.castShadow = true;
+    celBox.userData = {
+      name: 'Cel Shaded Box',
+      type: 'Custom Shader (Cel Shading)'
+    };
+    scene.add(celBox);
+    clickableObjects.push(celBox);
+
+    const waveVertexShader = `
     uniform float uTime;
-    varying vec3 vNormal;
     varying vec3 vPosition;
-    
     void main() {
-      vNormal = normal;
       vPosition = position;
-      
       vec3 pos = position;
       float wave = sin(position.x * 3.0 + uTime) * 0.3;
       wave += sin(position.z * 2.0 + uTime * 1.5) * 0.2;
       pos.y += wave;
-      
       gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
     }
   `;
-  
-  const waveFragmentShader = `
+
+    const waveFragmentShader = `
     uniform float uTime;
-    varying vec3 vNormal;
     varying vec3 vPosition;
-    
     void main() {
       vec3 color1 = vec3(0.36, 0.71, 1.0);
       vec3 color2 = vec3(1.0, 0.36, 0.71);
-      float mix = sin(vPosition.x + vPosition.z + uTime) * 0.5 + 0.5;
-      vec3 color = mix(color1, color2, mix);
-      
+      float mixValue = sin(vPosition.x + vPosition.z + uTime) * 0.5 + 0.5;
+      vec3 color = mix(color1, color2, mixValue);
       gl_FragColor = vec4(color, 1.0);
     }
   `;
-  
-  const waveMaterial = new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0.0 }
-    },
-    vertexShader: waveVertexShader,
-    fragmentShader: waveFragmentShader,
-    side: THREE.DoubleSide
-  });
-  
-  const wavePlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(3, 3, 32, 32),
-    waveMaterial
-  );
-  wavePlane.position.set(0, 2, -4);
-  wavePlane.userData = { name: 'Wave Plane', type: 'Vertex Shader Animation' };
-  scene.add(wavePlane);
-  clickableObjects.push(wavePlane);
 
-  const coneGeometry = new THREE.ConeGeometry(0.6, 1.5, 32);
-  const coneMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffd45d,
-    metalness: 0.3,
-    roughness: 0.6
-  });
-  const cone = new THREE.Mesh(coneGeometry, coneMaterial);
-  cone.position.set(12, 3, 0);
-  cone.castShadow = true;
-  cone.receiveShadow = true;
-  cone.userData = { name: 'Animated Cone', type: 'PBR Material' };
-  scene.add(cone);
-  clickableObjects.push(cone);
-
-  const cubeUrls = [
-    'https://threejs.org/examples/textures/cube/Bridge2/posx.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/negx.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/posy.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/negy.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/posz.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/negz.jpg'
-  ];
-  const envMap = new THREE.CubeTextureLoader().load(cubeUrls);
-  envMap.encoding = THREE.sRGBEncoding;
-  scene.environment = envMap;
-  metallicMaterial.envMap = envMap;
-
-  const loader = new THREE.GLTFLoader();
-  let model = null;
-  const modelUrl = 'https://hlangkaa.github.io/ICG/Portfolio/Model/Profile-4.glb';
-  
-  loader.load(
-    modelUrl,
-    function (gltf) {
-      model = gltf.scene;
-      model.position.set(-8, 0, 1);
-      model.scale.setScalar(150);
-      
-      model.traverse(function (child) {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-          child.userData = { name: 'GLB Model', type: '3D Character Model' };
-          clickableObjects.push(child);
+    const waveMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: {
+          value: 0.0
         }
-      });
-      
-      scene.add(model);
-      console.log('Model loaded successfully');
-    },
-    function (progress) {
-      console.log('Loading:', (progress.loaded / progress.total * 100).toFixed(0) + '%');
-    },
-    function (error) {
-      console.error('Error loading model:', error);
-    }
-  );
+      },
+      vertexShader: waveVertexShader,
+      fragmentShader: waveFragmentShader,
+      side: THREE.DoubleSide
+    });
 
-  addEventListener('resize', () => {
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-  });
+    const wavePlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(3, 3, 32, 32),
+      waveMaterial
+    );
+    // ✅ แก้ไข 2: ย้ายตำแหน่งวัตถุ
+    wavePlane.position.set(12, 1.5, -3);
+    wavePlane.userData = {
+      name: 'Wave Plane',
+      type: 'Vertex Shader Animation'
+    };
+    scene.add(wavePlane);
+    clickableObjects.push(wavePlane);
 
-  const clock = new THREE.Clock();
-  
-  function animate() {
-    const delta = clock.getDelta();
-    const time = clock.getElapsedTime();
-    
-    waveMaterial.uniforms.uTime.value = time;
-    
-    celBox.rotation.y += delta * 0.5;
-    celBox.rotation.x += delta * 0.3;
-    
-    cone.position.y = 0.75 + Math.sin(time * 2) * 0.3;
-    cone.rotation.y += delta;
-    
-    if (!isPointerLocked) {
-      camera.position.lerp(cameraTargetPosition, 0.05);
-      
-      const lookAtTarget = new THREE.Vector3();
-      camera.getWorldDirection(lookAtTarget);
-      lookAtTarget.multiplyScalar(10);
-      lookAtTarget.add(camera.position);
-      lookAtTarget.lerp(cameraTargetLookAt, 0.05);
-      camera.lookAt(lookAtTarget);
+    const coneGeometry = new THREE.ConeGeometry(0.6, 1.5, 32);
+    const coneMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffd45d,
+      metalness: 0.3,
+      roughness: 0.6
+    });
+    const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+    // ✅ แก้ไข 2: ย้ายตำแหน่งวัตถุ
+    cone.position.set(12, 0.75, 0);
+    cone.castShadow = true;
+    cone.receiveShadow = true;
+    cone.userData = {
+      name: 'Animated Cone',
+      type: 'PBR Material'
+    };
+    scene.add(cone);
+    clickableObjects.push(cone);
+
+    const cubeUrls = [
+      'https://threejs.org/examples/textures/cube/Bridge2/posx.jpg',
+      'https://threejs.org/examples/textures/cube/Bridge2/negx.jpg',
+      'https://threejs.org/examples/textures/cube/Bridge2/posy.jpg',
+      'https://threejs.org/examples/textures/cube/Bridge2/negy.jpg',
+      'https://threejs.org/examples/textures/cube/Bridge2/posz.jpg',
+      'https://threejs.org/examples/textures/cube/Bridge2/negz.jpg'
+    ];
+    const envMap = new THREE.CubeTextureLoader().load(cubeUrls);
+    envMap.encoding = THREE.sRGBEncoding;
+    scene.environment = envMap;
+    metallicMaterial.envMap = envMap;
+
+    const loader = new THREE.GLTFLoader();
+    let model = null;
+    const modelUrl = 'https://hlangkaa.github.io/ICG/Portfolio/Model/Profile-4.glb';
+
+    loader.load(
+      modelUrl,
+      function(gltf) {
+        model = gltf.scene;
+        model.position.set(0, 0, 1);
+        model.scale.setScalar(150);
+
+        model.traverse(function(child) {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        
+        scene.add(model);
+        console.log('Model loaded successfully');
+      },
+      function(progress) {
+        console.log('Loading:', (progress.loaded / progress.total * 100).toFixed(0) + '%');
+      },
+      function(error) {
+        console.error('Error loading model:', error);
+      }
+    );
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    const clock = new THREE.Clock();
+
+    camera.lookAt(scene.position);
+    yaw = camera.rotation.y;
+    pitch = camera.rotation.x;
+
+    function animate() {
+      const delta = clock.getDelta();
+      const time = clock.getElapsedTime();
+
+      waveMaterial.uniforms.uTime.value = time;
+
+      celBox.rotation.y += delta * 0.5;
+      celBox.rotation.x += delta * 0.3;
+
+      cone.position.y = 0.75 + Math.sin(time * 2) * 0.3;
+      cone.rotation.y += delta;
+
+      if (!isPointerLocked) {
+        camera.position.lerp(cameraTargetPosition, 0.05);
+
+        const lookAtTarget = new THREE.Vector3();
+        camera.getWorldDirection(lookAtTarget);
+        lookAtTarget.multiplyScalar(10);
+        lookAtTarget.add(camera.position);
+        lookAtTarget.lerp(cameraTargetLookAt, 0.05);
+        camera.lookAt(lookAtTarget);
+      }
+
+      if (isPointerLocked) {
+        direction.z = Number(moveForward) - Number(moveBackward);
+        direction.x = Number(moveRight) - Number(moveLeft);
+        direction.normalize();
+
+        velocity.x = direction.x * speed * delta;
+        velocity.z = direction.z * speed * delta;
+
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        forward.y = 0;
+        forward.normalize();
+
+        const right = new THREE.Vector3();
+        right.crossVectors(camera.up, forward);
+
+        camera.position.addScaledVector(forward, velocity.z);
+        camera.position.addScaledVector(right, -velocity.x);
+
+        camera.position.x = Math.max(-14, Math.min(14, camera.position.x));
+        camera.position.z = Math.max(-14, Math.min(14, camera.position.z));
+        camera.position.y = 3;
+      }
+
+      const camPos = camera.position;
+      document.getElementById('cameraPos').textContent =
+        `X: ${camPos.x.toFixed(1)}, Y: ${camPos.y.toFixed(1)}, Z: ${camPos.z.toFixed(1)}`;
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
     }
-    
-    if (isPointerLocked) {
-      direction.z = Number(moveForward) - Number(moveBackward);
-      direction.x = Number(moveRight) - Number(moveLeft);
-      direction.normalize();
-      
-      velocity.x = direction.x * speed * delta;
-      velocity.z = direction.z * speed * delta;
-      
-      const forward = new THREE.Vector3();
-      camera.getWorldDirection(forward);
-      forward.y = 0;
-      forward.normalize();
-      
-      const right = new THREE.Vector3();
-      right.crossVectors(forward, camera.up);
-      
-      camera.position.addScaledVector(forward, -velocity.z);
-      camera.position.addScaledVector(right, velocity.x);
-      
-      camera.position.x = Math.max(-12, Math.min(12, camera.position.x));
-      camera.position.z = Math.max(-12, Math.min(12, camera.position.z));
-      camera.position.y = 3;
-    }
-    
-    const camPos = camera.position;
-    document.getElementById('cameraPos').textContent = 
-      `X: ${camPos.x.toFixed(2)}, Y: ${camPos.y.toFixed(2)}, Z: ${camPos.z.toFixed(2)}`;
-    
-    renderer.render(scene, camera);
-    requestAnimationFrame(animate);
-  }
-  
-  animate();
-</script>
+
+    animate();
+  </script>
 </body>
+
 </html>
