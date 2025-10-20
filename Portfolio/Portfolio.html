@@ -50,11 +50,12 @@
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // แสงสว่าง
-  const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+  // แสงสว่าง - เพิ่มความสว่างและหลากหลาย
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  // แสงหลักจากด้านบน
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
   directionalLight.position.set(5, 10, 5);
   directionalLight.castShadow = true;
   directionalLight.shadow.mapSize.width = 2048;
@@ -66,6 +67,24 @@
   directionalLight.shadow.camera.top = 10;
   directionalLight.shadow.camera.bottom = -10;
   scene.add(directionalLight);
+
+  // แสงเสริมด้านข้าง
+  const sideLight1 = new THREE.DirectionalLight(0xffd4a3, 0.5);
+  sideLight1.position.set(-5, 5, 0);
+  scene.add(sideLight1);
+
+  const sideLight2 = new THREE.DirectionalLight(0xa3c4ff, 0.4);
+  sideLight2.position.set(5, 3, -5);
+  scene.add(sideLight2);
+
+  // แสง Point Light เพิ่มบรรยากาศ
+  const pointLight1 = new THREE.PointLight(0xffffff, 0.8, 20);
+  pointLight1.position.set(3, 4, 3);
+  scene.add(pointLight1);
+
+  const pointLight2 = new THREE.PointLight(0xffffff, 0.6, 15);
+  pointLight2.position.set(-3, 3, -3);
+  scene.add(pointLight2);
 
   // Environment map
   const cubeUrls = [
@@ -85,7 +104,7 @@
   let model = null;
   
   // ตัวอย่าง URL ของโมเดล GLB (เปลี่ยนเป็น URL ของไฟล์ .glb ที่คุณต้องการ)
-  const modelUrl = 'https://hlangkaa.github.io/ICG/Portfolio/Model/gryffindor_common_room.glb';
+  const modelUrl = 'https://hlangkaa.github.io/ICG/Portfolio/Model/Profile-4.glb';
   
   loader.load(
     modelUrl,
@@ -94,7 +113,7 @@
       
       // ตั้งค่าให้โมเดลอยู่บนพื้น
       model.position.y = 0;
-      model.scale.setScalar(1); // ปรับขนาดถ้าต้องการ
+      model.scale.setScalar(150); // ปรับขนาดถ้าต้องการ
       
       // เปิดใช้งานเงา
       model.traverse(function (child) {
@@ -143,7 +162,7 @@
     
     // หมุนโมเดลเบาๆ (ถ้ามี)
     if (model) {
-      model.rotation.y += 0.005;
+      //model.rotation.y += 0.005;
     }
     
     renderer.render(scene, camera);
