@@ -10,13 +10,12 @@
     #info{position:absolute;top:10px;left:10px;color:white;background:rgba(0,0,0,0.7);padding:10px;border-radius:5px;font-size:14px}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
 <div id="info">
   กำลังโหลดโมเดล 3D...<br>
-  <small>ใช้เมาส์เพื่อหมุนและซูม</small>
+  <small>คลิกหน้าจอเพื่อเริ่มเล่น</small>
 </div>
 
 <script>
@@ -25,7 +24,7 @@
   scene.background = new THREE.Color(0x222222);
 
   const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 100);
-  camera.position.set(0, 2, 5);
+  camera.position.set(0, 3, 5);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(innerWidth, innerHeight);
@@ -34,9 +33,67 @@
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   document.body.appendChild(renderer.domElement);
 
-  const controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
+  // FPS Controls
+  let moveForward = false, moveBackward = false;
+  let moveLeft = false, moveRight = false;
+  let velocity = new THREE.Vector3();
+  let direction = new THREE.Vector3();
+  const speed = 10.0;
+  
+  // Mouse look
+  let yaw = 0, pitch = 0;
+  let isPointerLocked = false;
+  
+  // Pointer Lock
+  renderer.domElement.addEventListener('click', () => {
+    renderer.domElement.requestPointerLock();
+  });
+  
+  document.addEventListener('pointerlockchange', () => {
+    isPointerLocked = document.pointerLockElement === renderer.domElement;
+    if (isPointerLocked) {
+      document.getElementById('info').innerHTML = `
+        โหลดเสร็จแล้ว - กำลังเล่น<br>
+        <small>WASD: เดิน | เมาส์: มองรอบตัว | ESC: ปลดล็อก</small>
+      `;
+    } else {
+      document.getElementById('info').innerHTML = `
+        คลิกหน้าจอเพื่อเริ่มเล่น<br>
+        <small>WASD: เดิน | เมาส์: มองรอบตัว</small>
+      `;
+    }
+  });
+  
+  document.addEventListener('mousemove', (e) => {
+    if (!isPointerLocked) return;
+    
+    yaw -= e.movementX * 0.002;
+    pitch -= e.movementY * 0.002;
+    pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
+    
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = yaw;
+    camera.rotation.x = pitch;
+  });
+  
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
+    switch(e.code) {
+      case 'KeyS': moveForward = true; break;
+      case 'KeyW': moveBackward = true; break;
+      case 'KeyA': moveLeft = true; break;
+      case 'KeyD': moveRight = true; break;
+    }
+  });
+  
+  document.addEventListener('keyup', (e) => {
+    switch(e.code) {
+      case 'KeyS': moveForward = false; break;
+      case 'KeyW': moveBackward = false; break;
+      case 'KeyA': moveLeft = false; break;
+      case 'KeyD': moveRight = false; break;
+    }
+  });
 
   // สร้างพื้น
   const floorGeometry = new THREE.PlaneGeometry(20, 20);
@@ -127,8 +184,8 @@
       
       // อัปเดต UI
       document.getElementById('info').innerHTML = `
-        โมเดล 3D โหลดเสร็จแล้ว!<br>
-        <small>ใช้เมาส์เพื่อหมุนและซูม</small>
+        คลิกหน้าจอเพื่อเริ่มเล่น<br>
+        <small>WASD: เดิน | เมาส์: มองรอบตัว</small>
       `;
       
       console.log('โมเดล GLB โหลดสำเร็จ:', gltf);
@@ -137,7 +194,7 @@
       const percent = (progress.loaded / progress.total * 100).toFixed(0);
       document.getElementById('info').innerHTML = `
         กำลังโหลดโมเดล 3D... ${percent}%<br>
-        <small>ใช้เมาส์เพื่อหมุนและซูม</small>
+        <small>คลิกหน้าจอเพื่อเริ่มเล่น</small>
       `;
     },
     function (error) {
@@ -157,12 +214,37 @@
   });
 
   // วงจรเรนเดอร์
+  const clock = new THREE.Clock();
+  
   function animate() {
-    controls.update();
+    const delta = clock.getDelta();
     
-    // หมุนโมเดลเบาๆ (ถ้ามี)
-    if (model) {
-      //model.rotation.y += 0.005;
+    if (isPointerLocked) {
+      // คำนวณทิศทาง
+      direction.z = Number(moveForward) - Number(moveBackward);
+      direction.x = Number(moveRight) - Number(moveLeft);
+      direction.normalize();
+      
+      // เคลื่อนที่
+      velocity.x = direction.x * speed * delta;
+      velocity.z = direction.z * speed * delta;
+      
+      // Apply movement relative to camera direction
+      const forward = new THREE.Vector3();
+      camera.getWorldDirection(forward);
+      forward.y = 0;
+      forward.normalize();
+      
+      const right = new THREE.Vector3();
+      right.crossVectors(forward, camera.up);
+      
+      camera.position.addScaledVector(forward, -velocity.z);
+      camera.position.addScaledVector(right, velocity.x);
+      
+      // จำกัดพื้นที่ (ไม่ให้ออกนอกพื้น)
+      camera.position.x = Math.max(-9, Math.min(9, camera.position.x));
+      camera.position.z = Math.max(-9, Math.min(9, camera.position.z));
+      camera.position.y = 4; // ความสูงของสายตา
     }
     
     renderer.render(scene, camera);
